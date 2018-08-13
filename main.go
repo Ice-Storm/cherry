@@ -11,6 +11,7 @@ import (
 
 	"sync"
 
+	"cherrychain/common/clogging"
 	"cherrychain/p2p"
 
 	host "github.com/libp2p/go-libp2p-host"
@@ -23,6 +24,10 @@ import (
 const protocolID = "/cherryCahin/1.0"
 
 var mutex = &sync.Mutex{}
+
+var mainLogger = clogging.MustGetLogger("Main")
+
+var pStore = p2p.NewPeerStore()
 
 type network struct {
 	p2p     *p2p.P2P
@@ -69,6 +74,15 @@ func (p *network) readData(rw *bufio.ReadWriter) {
 		if str == "" {
 			return
 		}
+
+		var peerInfo p2p.PeerDiscovery
+		json.Unmarshal([]byte(str), &peerInfo)
+		_, err := pStore.Push(peerInfo)
+		if err != nil {
+			mainLogger.Info("Failed push new peer info")
+		}
+		fmt.Printf("\nlen : %d\n", len(pStore.Store))
+
 		fmt.Printf(str)
 	}
 }

@@ -20,11 +20,12 @@ func NewPeerStore() *PeerStore {
 	return &PeerStore{make([]PeerDiscovery, 20)}
 }
 
-func (p *PeerStore) push(peerInfo PeerDiscovery) ([]PeerDiscovery, error) {
+func (p *PeerStore) Push(peerInfo PeerDiscovery) ([]PeerDiscovery, error) {
 	for _, val := range p.Store {
-		if val.ID == peerInfo.ID {
+		if val.ID.Pretty() == peerInfo.ID.Pretty() {
 			return nil, errors.New("Peer store has repeat peer id.")
 		}
 	}
-	return append(p.Store, peerInfo), nil
+	p.Store = append(p.Store, peerInfo)
+	return p.Store, nil
 }
