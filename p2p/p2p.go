@@ -46,7 +46,27 @@ func (n *P2P) ReadString(IO interface{}) (string, error) {
 	}
 }
 
-func (n *P2P) CheckAlive(stream *bufio.ReadWriter, str string) error {
-	n.WriteString(stream, str)
+func (n *P2P) SwapPeerInfo(stream *bufio.ReadWriter, str []byte) error {
+	n.WriteString(stream, string(append(str, '\n')))
 	return nil
+}
+
+func (n *P2P) WriteBytes(IO interface{}, data []byte) (int, error) {
+	switch stream := IO.(type) {
+	case *bufio.Writer:
+		n, err := stream.Write(append(data, '\n'))
+		stream.Flush()
+		return n, err
+	default:
+		return -1, nil
+	}
+}
+
+func (n *P2P) ReadBytes(IO interface{}) ([]byte, error) {
+	switch stream := IO.(type) {
+	case *bufio.Reader:
+		return stream.ReadBytes('\n')
+	default:
+		return nil, nil
+	}
 }

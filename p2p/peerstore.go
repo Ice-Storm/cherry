@@ -7,18 +7,24 @@ import (
 )
 
 type PeerStore struct {
-	Store []peer.ID
+	Store []PeerDiscovery
+}
+
+type PeerDiscovery struct {
+	ID       peer.ID
+	Protocol string
+	Port     uint16
 }
 
 func NewPeerStore() *PeerStore {
-	return &PeerStore{make([]peer.ID, 20)}
+	return &PeerStore{make([]PeerDiscovery, 20)}
 }
 
-func (p *PeerStore) push(id peer.ID) ([]peer.ID, error) {
+func (p *PeerStore) push(peerInfo PeerDiscovery) ([]PeerDiscovery, error) {
 	for _, val := range p.Store {
-		if val == id {
+		if val.ID == peerInfo.ID {
 			return nil, errors.New("Peer store has repeat peer id.")
 		}
 	}
-	return append(p.Store, id), nil
+	return append(p.Store, peerInfo), nil
 }

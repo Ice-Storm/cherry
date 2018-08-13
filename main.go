@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"sync"
@@ -25,7 +25,8 @@ const protocolID = "/cherryCahin/1.0"
 var mutex = &sync.Mutex{}
 
 type network struct {
-	p2p *p2p.P2P
+	p2p     *p2p.P2P
+	peerDis *p2p.PeerDiscovery
 }
 
 func (p *network) handleStream(s net.Stream) {
@@ -73,25 +74,15 @@ func (p *network) readData(rw *bufio.ReadWriter) {
 }
 
 func (p *network) writeData(rw *bufio.ReadWriter) {
-	stdReader := bufio.NewReader(os.Stdin)
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
 			mutex.Lock()
-			p.p2p.CheckAlive(rw, "sendData\n")
+			data, _ := json.Marshal(p.peerDis)
+			p.p2p.SwapPeerInfo(rw, data)
 			mutex.Unlock()
 		}
 	}()
-
-	for {
-		sendData, err := p.p2p.ReadString(stdReader)
-		if err != nil {
-			panic(err)
-		}
-		mutex.Lock()
-		p.p2p.WriteString(rw, sendData)
-		mutex.Unlock()
-	}
 }
 
 func main() {
@@ -100,8 +91,16 @@ func main() {
 
 	flag.Parse()
 
-	var p2pNetwork = &network{p2p.New()}
+	var p2pNetwork = &network{
+		p2p: p2p.New(),
+	}
 	host, err := p2pNetwork.p2p.GenesisNode(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port))
+
+	p2pNetwork.peerDis = &p2p.PeerDiscovery{
+		ID:       host.ID(),
+		Protocol: protocolID,
+		Port:     uint16(*port),
+	}
 
 	if err != nil {
 		panic(err)
