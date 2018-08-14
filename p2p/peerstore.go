@@ -2,8 +2,6 @@ package p2p
 
 import (
 	"errors"
-
-	peer "github.com/libp2p/go-libp2p-peer"
 )
 
 type PeerStore struct {
@@ -11,18 +9,18 @@ type PeerStore struct {
 }
 
 type PeerDiscovery struct {
-	ID       peer.ID
+	ID       string
 	Protocol string
 	Port     uint16
 }
 
 func NewPeerStore() *PeerStore {
-	return &PeerStore{make([]PeerDiscovery, 20)}
+	return &PeerStore{make([]PeerDiscovery, 0)}
 }
 
 func (p *PeerStore) Push(peerInfo PeerDiscovery) ([]PeerDiscovery, error) {
 	for _, val := range p.Store {
-		if val.ID.Pretty() == peerInfo.ID.Pretty() {
+		if val.ID == peerInfo.ID {
 			return nil, errors.New("Peer store has repeat peer id.")
 		}
 	}

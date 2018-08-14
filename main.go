@@ -32,6 +32,7 @@ var pStore = p2p.NewPeerStore()
 type network struct {
 	p2p     *p2p.P2P
 	peerDis *p2p.PeerDiscovery
+	Host    host.Host
 }
 
 func (p *network) handleStream(s net.Stream) {
@@ -80,23 +81,46 @@ func (p *network) readData(rw *bufio.ReadWriter) {
 		_, err := pStore.Push(peerInfo)
 		if err != nil {
 			mainLogger.Info("Failed push new peer info")
+		} else {
+			fmt.Printf("\nPeerInfo %v \n", peerInfo)
+			fmt.Printf("Host %s \n", p.Host.ID().Pretty())
+
+			if peerInfo.ID != p.Host.ID().Pretty() {
+				fmt.Printf("********")
+				fmt.Printf("\n/ip4/0.0.0.0/tcp/%d/ipfs/%s\n", peerInfo.Port, peerInfo.ID)
+				p.attach(peerInfo.Port, peerInfo.ID)
+			}
 		}
 		fmt.Printf("\nlen : %d\n", len(pStore.Store))
-
-		fmt.Printf(str)
+		//fmt.Printf(str)
 	}
 }
 
 func (p *network) writeData(rw *bufio.ReadWriter) {
 	go func() {
 		for {
-			time.Sleep(5 * time.Second)
-			mutex.Lock()
-			data, _ := json.Marshal(p.peerDis)
-			p.p2p.SwapPeerInfo(rw, data)
-			mutex.Unlock()
+			for i := 0; i < len(pStore.Store); i++ {
+				time.Sleep(5 * time.Second)
+				mutex.Lock()
+				data, _ := json.Marshal(pStore.Store[i])
+				p.p2p.SwapPeerInfo(rw, data)
+				mutex.Unlock()
+				if i > len(pStore.Store) {
+					i = 0
+				}
+			}
 		}
 	}()
+}
+
+func (p *network) attach(port uint16, hostID string) error {
+	peerID := addAddrToPeerstore(p.Host, fmt.Sprintf("/ip4/0.0.0.0/tcp/%d/ipfs/%s", port, hostID))
+	s, err := p.Host.NewStream(context.Background(), peerID, protocolID)
+	if err != nil {
+		panic(err)
+	}
+	p.handleStream(s)
+	return err
 }
 
 func main() {
@@ -110,8 +134,9 @@ func main() {
 	}
 	host, err := p2pNetwork.p2p.GenesisNode(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", *port))
 
+	p2pNetwork.Host = host
 	p2pNetwork.peerDis = &p2p.PeerDiscovery{
-		ID:       host.ID(),
+		ID:       host.ID().Pretty(),
 		Protocol: protocolID,
 		Port:     uint16(*port),
 	}
@@ -119,6 +144,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	pStore.Push(*p2pNetwork.peerDis)
 
 	if *dest == "" {
 		host.SetStreamHandler(protocolID, p2pNetwork.handleStream)

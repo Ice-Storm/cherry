@@ -24,7 +24,7 @@ var (
 func initLogger() {
 	once.Do(func() {
 		modules = make(map[string]string)
-		InitBackend(SetFormat(defaultFormat), defaultOutput)
+		InitBackend(SetFormat(defaultFormat), os.Stdout)
 	})
 }
 
