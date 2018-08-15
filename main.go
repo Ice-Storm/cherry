@@ -63,8 +63,6 @@ func addAddrToPeerstore(h host.Host, addr string) peer.ID {
 	targetPeerAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ipfs/%s", peer.IDB58Encode(peerid)))
 	targetAddr := cherryAddr.Decapsulate(targetPeerAddr)
 
-	fmt.Printf(pid)
-
 	h.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 	return peerid
 }
@@ -102,7 +100,10 @@ func (p *network) writeData(rw *bufio.ReadWriter) {
 			for i := 0; i < len(pStore.Store); i++ {
 				time.Sleep(5 * time.Second)
 				mutex.Lock()
-				data, _ := json.Marshal(pStore.Store[i])
+				data, err := json.Marshal(pStore.Store[i])
+				if err != nil {
+					mainLogger.Fatal("Failed marshal peer store")
+				}
 				p.p2p.SwapPeerInfo(rw, data)
 				mutex.Unlock()
 				if i > len(pStore.Store) {
