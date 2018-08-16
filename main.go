@@ -36,9 +36,7 @@ type network struct {
 }
 
 func (p *network) handleStream(s net.Stream) {
-	rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
-	go p.readData(rw)
-	go p.writeData(rw)
+	p.SwapPeersInfo(s)
 }
 
 func addAddrToPeerstore(h host.Host, addr string) peer.ID {
@@ -67,34 +65,43 @@ func addAddrToPeerstore(h host.Host, addr string) peer.ID {
 	return peerid
 }
 
-func (p *network) readData(rw *bufio.ReadWriter) {
-	for {
-		str, _ := p.p2p.ReadString(rw)
-		if str == "" {
-			return
-		}
-
-		var peerInfo p2p.PeerDiscovery
-		json.Unmarshal([]byte(str), &peerInfo)
-		_, err := pStore.Push(peerInfo)
-		if err != nil {
-			mainLogger.Info("Failed push new peer info")
-		} else {
-			fmt.Printf("\nPeerInfo %v \n", peerInfo)
-			fmt.Printf("Host %s \n", p.Host.ID().Pretty())
-
-			if peerInfo.ID != p.Host.ID().Pretty() {
-				fmt.Printf("********")
-				fmt.Printf("\n/ip4/0.0.0.0/tcp/%d/ipfs/%s\n", peerInfo.Port, peerInfo.ID)
-				p.attach(peerInfo.Port, peerInfo.ID)
-			}
-		}
-		fmt.Printf("\nlen : %d\n", len(pStore.Store))
-		//fmt.Printf(str)
-	}
+func (p *network) SwapPeersInfo(s net.Stream) {
+	p.readData(s)
+	p.writeData(s)
 }
 
-func (p *network) writeData(rw *bufio.ReadWriter) {
+func (p *network) readData(s net.Stream) {
+	rw := bufio.NewReader(s)
+	go func() {
+		for {
+			str, _ := p.p2p.ReadString(rw)
+			if str == "" {
+				return
+			}
+
+			var peerInfo p2p.PeerDiscovery
+			json.Unmarshal([]byte(str), &peerInfo)
+			_, err := pStore.Push(peerInfo)
+
+			if err != nil {
+				mainLogger.Info("Failed push new peer info")
+			} else {
+				fmt.Printf("\nPeerInfo %v \n", peerInfo)
+				fmt.Printf("Host %s \n", p.Host.ID().Pretty())
+
+				if peerInfo.ID != p.Host.ID().Pretty() {
+					fmt.Printf("********")
+					fmt.Printf("\n/ip4/0.0.0.0/tcp/%d/ipfs/%s\n", peerInfo.Port, peerInfo.ID)
+					p.attach(peerInfo.Port, peerInfo.ID)
+				}
+			}
+			fmt.Printf("\nlen : %d\n", len(pStore.Store))
+		}
+	}()
+}
+
+func (p *network) writeData(s net.Stream) {
+	rw := bufio.NewWriter(s)
 	go func() {
 		for {
 			for i := 0; i < len(pStore.Store); i++ {
@@ -104,7 +111,7 @@ func (p *network) writeData(rw *bufio.ReadWriter) {
 				if err != nil {
 					mainLogger.Fatal("Failed marshal peer store")
 				}
-				p.p2p.SwapPeerInfo(rw, data)
+				p.p2p.WriteBytes(rw, data)
 				mutex.Unlock()
 				if i > len(pStore.Store) {
 					i = 0
@@ -159,7 +166,7 @@ func main() {
 		peerID := addAddrToPeerstore(host, *dest)
 		s, err := host.NewStream(context.Background(), peerID, protocolID)
 		if err != nil {
-			panic(err)
+			mainLogger.Fatal("Can't connect", fmt.Sprintf("/ip4/0.0.0.0/tcp/%d/ipfs/%s", *port, host.ID().Pretty()))
 		}
 		p2pNetwork.handleStream(s)
 		select {}
