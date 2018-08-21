@@ -75,7 +75,9 @@ func (p *network) readData(s net.Stream) {
 	go func() {
 		for {
 			str, _ := p.p2p.ReadString(rw)
-			if str == "" {
+
+			if err := p.p2p.VerifyInput([]byte(str)); err != nil {
+				mainLogger.Debug("Invalidete network message")
 				return
 			}
 
