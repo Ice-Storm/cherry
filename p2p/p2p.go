@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 
 	"cherrychain/common/clogging"
 
@@ -52,7 +53,7 @@ func (n *P2P) VerifyInput(bytes []byte) error {
 	validateLen := 1024 * 1024
 
 	if len(bytes) == 0 {
-		return nil
+		return errors.New("Empty message")
 	}
 
 	if len(bytes) > validateLen {
@@ -63,6 +64,22 @@ func (n *P2P) VerifyInput(bytes []byte) error {
 	return n.verifyPeerDiscovery(bytes)
 }
 
+func (n *P2P) GetLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		p2pLogger.Error("Can not get interfaceAddrs")
+	}
+	for _, address := range addrs {
+		// 检查ip地址判断是否回环地址
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String(), nil
+			}
+		}
+	}
+	return "0.0.0.0", err
+}
+
 func (n *P2P) verifyPeerDiscovery(bytes []byte) error {
 	var peerInfo PeerDiscovery
 	if err := json.Unmarshal(bytes, &peerInfo); err != nil {
@@ -70,7 +87,7 @@ func (n *P2P) verifyPeerDiscovery(bytes []byte) error {
 		return err
 	}
 
-	addr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d/ipfs/%s", peerInfo.Port, peerInfo.ID)
+	addr := fmt.Sprintf("/ip4/%s/tcp/%d/ipfs/%s", peerInfo.IP, peerInfo.Port, peerInfo.ID)
 
 	cherryAddr, err := multiaddr.NewMultiaddr(addr)
 
@@ -89,6 +106,5 @@ func (n *P2P) verifyPeerDiscovery(bytes []byte) error {
 
 func (n *P2P) writeString(stream *bufio.Writer, str string) error {
 	stream.WriteString(str)
-	err := stream.Flush()
-	return err
+	return stream.Flush()
 }

@@ -12,6 +12,7 @@ type PeerDiscovery struct {
 	ID       string
 	Protocol string
 	Port     uint16
+	IP       string
 }
 
 func NewPeerStore() *PeerStore {
