@@ -12,6 +12,7 @@ import (
 
 	"cherrychain/common/clogging"
 
+	"github.com/juju/ratelimit"
 	libp2p "github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-host"
 	libnet "github.com/libp2p/go-libp2p-net"
@@ -29,6 +30,7 @@ const protocolID = "/cherryCahin/1.0"
 type P2P struct {
 	Host      host.Host
 	PeerStore *PeerStore
+	RateLimit *ratelimit.Bucket
 }
 
 func New(genesisMultiAddr string) *P2P {
@@ -37,7 +39,11 @@ func New(genesisMultiAddr string) *P2P {
 	if err != nil {
 		p2pLogger.Error("Cant't new p2p module")
 	}
-	return &P2P{Host: host, PeerStore: NewPeerStore()}
+	return &P2P{
+		Host:      host,
+		PeerStore: NewPeerStore(),
+		RateLimit: ratelimit.NewBucketWithRate(5, int64(100)),
+	}
 }
 
 func genesisNode(genesisMultiAddr string) (host.Host, error) {
@@ -148,6 +154,10 @@ func (n *P2P) readData(s libnet.Stream) {
 	rw := bufio.NewReader(s)
 	go func() {
 		for {
+			if _, isTake := n.RateLimit.TakeMaxDuration(1, 500*time.Millisecond); !isTake {
+				continue
+			}
+
 			str, _ := n.ReadString(rw)
 
 			if err := n.IsNetworkMetaData([]byte(str)); err != nil {
