@@ -3,17 +3,18 @@ package p2p
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
-
 	"sync"
+	"time"
 
 	"cherrychain/common/clogging"
 
 	"github.com/juju/ratelimit"
 	libp2p "github.com/libp2p/go-libp2p"
+	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-host"
 	libnet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -36,9 +37,11 @@ type P2P struct {
 func New(genesisMultiAddr string) *P2P {
 	p2pLogger.Info("New p2p module")
 	host, err := genesisNode(genesisMultiAddr)
+
 	if err != nil {
 		p2pLogger.Error("Cant't new p2p module")
 	}
+
 	return &P2P{
 		Host:      host,
 		PeerStore: NewPeerStore(),
@@ -48,9 +51,17 @@ func New(genesisMultiAddr string) *P2P {
 
 func genesisNode(genesisMultiAddr string) (host.Host, error) {
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(genesisMultiAddr)
+
+	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+
+	if err != nil {
+		p2pLogger.Error("Cant't generate node private key")
+	}
+
 	host, _ := libp2p.New(
 		context.Background(),
 		libp2p.ListenAddrs(sourceMultiAddr),
+		libp2p.Identity(prvKey),
 	)
 	return host, nil
 }
