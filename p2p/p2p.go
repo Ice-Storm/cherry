@@ -77,7 +77,7 @@ func (n *P2P) ReadString(IO interface{}) (string, error) {
 	case *bufio.Reader:
 		return stream.ReadString('\n')
 	default:
-		return "", nil
+		panic("Invalid IO interface")
 	}
 }
 
