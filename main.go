@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 
@@ -14,9 +13,9 @@ import (
 )
 
 var bootstrapPeers = []string{
-	"/ip4/172.16.101.217/tcp/9816/ipfs/QmTLP33p9FgZWhcPDYZqYfehvxmefn4pTGC517PaCGM8YX",
-	"/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",
 	"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
+	"/ip4/172.16.101.215/tcp/9816/ipfs/QmNk7mn6viz4quXVyiVPoXU1MHhXs6tkkoS9uSDNNVSSvy",
+	"/ip4/172.16.101.215/tcp/9817/ipfs/QmUPnXrvjNQan2nLRHMv8nj4v4Maj8s47Yzj7hvE83vGYJ",
 	"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
 }
 
@@ -61,19 +60,7 @@ func main() {
 		fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s", ip, *port, p2pModule.Host.ID().Pretty())
 		fmt.Printf("\n")
 		p2pModule.AddAddrToPeerstore(p2pModule.Host, *dest)
-
-		peers := bootstrap.BootstrapConn(p2pModule.Host, bootstrapPeers)
-		for _, p := range peers {
-			if p.ID == p2pModule.Host.ID() || len(p.Addrs) == 0 {
-				continue
-			}
-			s, err := p2pModule.Host.NewStream(context.Background(), p.ID, protocolID)
-			if err != nil {
-				mainLogger.Error("Can't connect %s", err)
-			}
-			p2pModule.HandleStream(s)
-			fmt.Println("Connected to: ", p)
-		}
+		bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
 		select {}
 	}
 }
