@@ -57,8 +57,7 @@ func main() {
 		<-make(chan struct{})
 	} else {
 		p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
-		fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s", ip, *port, p2pModule.Host.ID().Pretty())
-		fmt.Printf("\n")
+		fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
 		p2pModule.AddAddrToPeerstore(p2pModule.Host, *dest)
 		bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
 		select {}

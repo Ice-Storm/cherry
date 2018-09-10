@@ -178,9 +178,8 @@ func (n *P2P) readData(s libnet.Stream) {
 
 			var peerInfo PeerDiscovery
 			json.Unmarshal([]byte(str), &peerInfo)
-			_, err := n.PeerStore.Push(peerInfo)
 
-			if err != nil {
+			if _, err := n.PeerStore.Push(peerInfo); err != nil {
 				p2pLogger.Info("Failed push new peer info")
 			} else {
 				fmt.Printf("\nPeerInfo %v \n", peerInfo)
