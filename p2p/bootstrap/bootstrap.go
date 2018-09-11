@@ -30,6 +30,9 @@ func BootstrapConn(p2pModule *p2p.P2P, bootstrapPeers []string) []peerstore.Peer
 			continue
 		}
 		peerinfo, _ := peerstore.InfoFromP2pAddr(iaddr.Multiaddr())
+		if len(peerinfo.Addrs) <= 0 {
+			continue
+		}
 		if err := p2pModule.Host.Connect(ctx, *peerinfo); err != nil {
 			bootstrapLogger.Error(err)
 		} else {

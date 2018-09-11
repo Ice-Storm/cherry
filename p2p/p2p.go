@@ -34,9 +34,9 @@ type P2P struct {
 	RateLimit *ratelimit.Bucket
 }
 
-func New(genesisMultiAddr string) *P2P {
+func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	p2pLogger.Info("New p2p module")
-	host, err := genesisNode(genesisMultiAddr)
+	host, err := genesisNode(ctx, genesisMultiAddr)
 
 	if err != nil {
 		p2pLogger.Error("Cant't new p2p module")
@@ -49,7 +49,7 @@ func New(genesisMultiAddr string) *P2P {
 	}
 }
 
-func genesisNode(genesisMultiAddr string) (host.Host, error) {
+func genesisNode(ctx context.Context, genesisMultiAddr string) (host.Host, error) {
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(genesisMultiAddr)
 
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
@@ -59,7 +59,7 @@ func genesisNode(genesisMultiAddr string) (host.Host, error) {
 	}
 
 	host, _ := libp2p.New(
-		context.Background(),
+		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
 	)
@@ -137,6 +137,7 @@ func (n *P2P) AddAddrToPeerstore(h host.Host, addr string) peer.ID {
 		p2pLogger.Error(err)
 	}
 
+	// TODO: Check protocol type
 	pid, err := cherryAddr.ValueForProtocol(multiaddr.P_IPFS)
 
 	if err != nil {
@@ -180,7 +181,7 @@ func (n *P2P) readData(s libnet.Stream) {
 			json.Unmarshal([]byte(str), &peerInfo)
 
 			if _, err := n.PeerStore.Push(peerInfo); err != nil {
-				p2pLogger.Info("Failed push new peer info")
+				p2pLogger.Debug("Failed push new peer info")
 			} else {
 				fmt.Printf("\nPeerInfo %v \n", peerInfo)
 				fmt.Printf("Host %s \n", n.Host.ID().Pretty())

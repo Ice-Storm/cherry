@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
@@ -37,7 +38,8 @@ func main() {
 
 	ip, _ := p2pUtil.GetLocalIP()
 
-	p2pModule := p2p.New(fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
+	ctx := context.Background()
+	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
 
 	var p2pNetwork = &network{
 		p2p: p2pModule,
