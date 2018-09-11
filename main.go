@@ -14,9 +14,11 @@ import (
 )
 
 var bootstrapPeers = []string{
+	"/ip4/172.16.101.215/tcp/9817/ipfs/Qmb2XUn5BaMjLGE2tDyVzpK35WJ26peqXUxdHPf1FLWkGu",
+	"/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+	"/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
+	"/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",
 	"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
-	"/ip4/172.16.101.215/tcp/9816/ipfs/QmNk7mn6viz4quXVyiVPoXU1MHhXs6tkkoS9uSDNNVSSvy",
-	"/ip4/172.16.101.215/tcp/9817/ipfs/QmUPnXrvjNQan2nLRHMv8nj4v4Maj8s47Yzj7hvE83vGYJ",
 	"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
 }
 
@@ -37,8 +39,8 @@ func main() {
 	flag.Parse()
 
 	ip, _ := p2pUtil.GetLocalIP()
-
 	ctx := context.Background()
+
 	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
 
 	var p2pNetwork = &network{
@@ -60,8 +62,7 @@ func main() {
 	} else {
 		p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
 		fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
-		p2pModule.AddAddrToPeerstore(p2pModule.Host, *dest)
-		bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
+		bootstrap.BootstrapConn(p2pModule, append(bootstrapPeers, *dest))
 		select {}
 	}
 }

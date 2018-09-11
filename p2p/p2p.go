@@ -66,8 +66,8 @@ func genesisNode(ctx context.Context, genesisMultiAddr string) (host.Host, error
 	return host, nil
 }
 
-func (p *P2P) HandleStream(s libnet.Stream) {
-	p.swapPeersInfo(s)
+func (n *P2P) HandleStream(s libnet.Stream) {
+	n.swapPeersInfo(s)
 }
 
 func (n *P2P) ReadString(IO interface{}) (string, error) {
@@ -158,6 +158,7 @@ func (n *P2P) AddAddrToPeerstore(h host.Host, addr string) peer.ID {
 }
 
 func (n *P2P) swapPeersInfo(s libnet.Stream) {
+	p2pLogger.Info("Got a new stream!")
 	n.readData(s)
 	n.writeData(s)
 }
