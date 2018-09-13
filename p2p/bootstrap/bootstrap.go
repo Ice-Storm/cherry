@@ -11,6 +11,7 @@ import (
 	"cherrychain/p2p"
 
 	cid "github.com/ipfs/go-cid"
+	ipfsaddr "github.com/ipfs/go-ipfs-addr"
 	host "github.com/libp2p/go-libp2p-host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
@@ -101,23 +102,23 @@ func BootstrapConn(p2pModule *p2p.P2P, bootstrapPeers []string) []peerstore.Peer
 		bootstrapLogger.Fatal("Cant't create DHT")
 	}
 	// Let's connect to the bootstrap nodes first. They will tell us about the other nodes in the network.
-	// for _, addr := range bootstrapPeers {
-	// 	iaddr, err := ipfsaddr.ParseString(addr)
-	// 	if err != nil {
-	// 		bootstrapLogger.Info("Invalid ipfs address")
-	// 		continue
-	// 	}
-	// 	peerinfo, _ := peerstore.InfoFromP2pAddr(iaddr.Multiaddr())
-	// 	if len(peerinfo.Addrs) <= 0 {
-	// 		continue
-	// 	}
-	// 	if err := p2pModule.Host.Connect(ctx, *peerinfo); err != nil {
-	// 		bootstrapLogger.Error(err)
-	// 	} else {
-	// 		p2pModule.AddAddrToPeerstore(p2pModule.Host, addr)
-	// 		bootstrapLogger.Info("Connection established with bootstrap node: ", *peerinfo)
-	// 	}
-	// }
+	for _, addr := range bootstrapPeers {
+		iaddr, err := ipfsaddr.ParseString(addr)
+		if err != nil {
+			bootstrapLogger.Info("Invalid ipfs address")
+			continue
+		}
+		peerinfo, _ := peerstore.InfoFromP2pAddr(iaddr.Multiaddr())
+		if len(peerinfo.Addrs) <= 0 {
+			continue
+		}
+		if err := p2pModule.Host.Connect(ctx, *peerinfo); err != nil {
+			bootstrapLogger.Error(err)
+		} else {
+			p2pModule.AddAddrToPeerstore(p2pModule.Host, addr)
+			bootstrapLogger.Info("Connection established with bootstrap node: ", *peerinfo)
+		}
+	}
 
 	// We use a rendezvous point "meet me here" to announce our location.
 	// This is like telling your friends to meet you at the Eiffel Tower.

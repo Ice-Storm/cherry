@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"time"
 
 	"cherrychain/common/clogging"
 	"cherrychain/p2p"
@@ -20,7 +19,8 @@ var bootstrapPeers = []string{
 	// "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
 	// "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",
 	// "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
-	// "/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
+	// "/ip4/172.16.101.215/tcp/9091/ipfs/QmR8EFE7rxsetqx7bqprPfwy5THWNH8tVxSoZjL9ah1FsE",
+	// "/ip4/172.16.101.215/tcp/1121/ipfs/QmaiU2vZtq9LcSfh77LJzN4vHQKEHhRt3j343P6jCDjXrJ",
 }
 
 const protocolID = "/cherryCahin/1.0"
@@ -51,20 +51,18 @@ func main() {
 	p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
 	fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
 
-	conf := bootstrap.Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          0,
-		BootstrapInterval: time.Second * 5,
-	}
-	bootstrapper, err := bootstrap.New(p2pModule.Host, conf)
-	if err != nil {
-		panic(err)
-	}
-	bootstrapper.Start(ctx)
+	// conf := bootstrap.Config{
+	// 	BootstrapPeers:    bootstrapPeers,
+	// 	MinPeers:          0,
+	// 	BootstrapInterval: time.Second * 5,
+	// }
+	// bootstrapper, err := bootstrap.New(p2pModule.Host, conf)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// bootstrapper.Start(ctx)
 
-	time.AfterFunc(10*time.Second, func() {
-		bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
-	})
+	bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
 
 	select {}
 
