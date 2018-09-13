@@ -9,8 +9,6 @@ import (
 	"cherrychain/p2p"
 	bootstrap "cherrychain/p2p/bootstrap"
 	p2pUtil "cherrychain/p2p/util"
-
-	host "github.com/libp2p/go-libp2p-host"
 )
 
 var bootstrapPeers = []string{
@@ -26,12 +24,6 @@ var bootstrapPeers = []string{
 const protocolID = "/cherryCahin/1.0"
 
 var mainLogger = clogging.MustGetLogger("Main")
-
-type network struct {
-	p2p     *p2p.P2P
-	peerDis *p2p.PeerDiscovery
-	Host    host.Host
-}
 
 func main() {
 	port := flag.Int("sp", 3000, "listen port")
@@ -51,19 +43,12 @@ func main() {
 	p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
 	fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
 
-	// conf := bootstrap.Config{
-	// 	BootstrapPeers:    bootstrapPeers,
-	// 	MinPeers:          0,
-	// 	BootstrapInterval: time.Second * 5,
-	// }
-	// bootstrapper, err := bootstrap.New(p2pModule.Host, conf)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// bootstrapper.Start(ctx)
+	conf := bootstrap.Config{
+		BootstrapPeers: bootstrapPeers,
+		MinPeers:       0,
+	}
 
-	bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
+	bootstrap.Bootstrap(p2pModule, conf)
 
 	select {}
-
 }
