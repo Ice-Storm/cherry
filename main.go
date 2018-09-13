@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"time"
 
 	"cherrychain/common/clogging"
 	"cherrychain/p2p"
@@ -14,12 +15,12 @@ import (
 )
 
 var bootstrapPeers = []string{
-	"/ip4/172.16.101.215/tcp/9817/ipfs/Qmb2XUn5BaMjLGE2tDyVzpK35WJ26peqXUxdHPf1FLWkGu",
-	"/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
-	"/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
-	"/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",
-	"/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
-	"/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
+	// "/ip4/172.16.101.215/tcp/9817/ipfs/Qmb2XUn5BaMjLGE2tDyVzpK35WJ26peqXUxdHPf1FLWkGu",
+	// "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+	// "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
+	// "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",
+	// "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
+	// "/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",
 }
 
 const protocolID = "/cherryCahin/1.0"
@@ -43,26 +44,28 @@ func main() {
 
 	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
 
-	var p2pNetwork = &network{
-		p2p: p2pModule,
-		peerDis: &p2p.PeerDiscovery{
-			ID:       p2pModule.Host.ID().Pretty(),
-			Protocol: protocolID,
-			Port:     uint16(*port),
-			IP:       ip,
-		},
+	if *dest != "" {
+		bootstrapPeers = append(bootstrapPeers, *dest)
 	}
 
-	p2pModule.PeerStore.Push(*p2pNetwork.peerDis)
+	p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
+	fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
 
-	if *dest == "" {
-		p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
-		fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s", ip, *port, p2pModule.Host.ID().Pretty())
-		<-make(chan struct{})
-	} else {
-		p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
-		fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
-		bootstrap.BootstrapConn(p2pModule, append(bootstrapPeers, *dest))
-		select {}
+	conf := bootstrap.Config{
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          0,
+		BootstrapInterval: time.Second * 5,
 	}
+	bootstrapper, err := bootstrap.New(p2pModule.Host, conf)
+	if err != nil {
+		panic(err)
+	}
+	bootstrapper.Start(ctx)
+
+	time.AfterFunc(10*time.Second, func() {
+		bootstrap.BootstrapConn(p2pModule, bootstrapPeers)
+	})
+
+	select {}
+
 }
