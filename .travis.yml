@@ -4,6 +4,10 @@ sudo: false
 
 language: go
 
+os:
+  - linux
+  - osx
+
 # Only the last two Go releases are supported by the Go team with security
 # updates. Any older versions be considered deprecated. Don't bother testing
 # with them.
@@ -18,7 +22,9 @@ git:
 
 # Skip the install step. Don't `go get` dependencies. Only build with the code
 # in vendor/
-install: true
+install:
+  - dep init
+  - dep ensure
 
 # Don't email me the results of the test runs.
 notifications:
