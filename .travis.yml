@@ -22,6 +22,9 @@ git:
 
 # Skip the install step. Don't `go get` dependencies. Only build with the code
 # in vendor/
+before_install:
+  - go get -u github.com/golang/dep/cmd/dep
+
 install:
   - dep init
   - dep ensure
