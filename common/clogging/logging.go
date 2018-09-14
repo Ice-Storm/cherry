@@ -33,6 +33,10 @@ func GetModuleLevel(module string) string {
 	return level
 }
 
+func GetModuleLevelMap() map[string]string {
+	return modules
+}
+
 // MustGetLogger is used in place of `logging.MustGetLogger` to allow us to
 // store a map of all modules and submodules that have loggers in the system.
 func MustGetLogger(module string) *logging.Logger {
@@ -59,14 +63,13 @@ func InitBackend(formatter logging.Formatter, output io.Writer) {
 	logging.SetBackend(backendFormatter).SetLevel(defaultLevel, "")
 }
 
-func setModuleLevel(module string, level string) (string, error) {
+func SetModuleLevel(module string, level string) (string, error) {
 	logLevel, err := logging.LogLevel(level)
 	if err != nil {
 		logger.Warningf("Invalid logging level '%s' - ignored", level)
 	} else {
 		logging.SetLevel(logging.Level(logLevel), module)
 		modules[module] = logLevel.String()
-		logger.Debugf("Module '%s' logger enabled for log level '%s'", module, logLevel)
 	}
 	return logLevel.String(), err
 }

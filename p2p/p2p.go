@@ -23,8 +23,6 @@ var p2pLogger = clogging.MustGetLogger("P2P")
 
 var mutex = &sync.Mutex{}
 
-const protocolID = "/cherryCahin/1.0"
-
 type P2P struct {
 	Host      host.Host
 	RateLimit *ratelimit.Bucket
