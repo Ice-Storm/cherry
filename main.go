@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"cherrychain/common/clogging"
+	config "cherrychain/config"
 	"cherrychain/p2p"
-	bootstrap "cherrychain/p2p/bootstrap"
+	"cherrychain/p2p/bootstrap"
 	p2pUtil "cherrychain/p2p/util"
 )
 
@@ -28,8 +29,10 @@ var mainLogger = clogging.MustGetLogger("Main")
 func main() {
 	port := flag.Int("sp", 3000, "listen port")
 	dest := flag.String("d", "", "Dest MultiAddr String")
-
+	configFile := flag.String("f", "cherry", "Config file name")
 	flag.Parse()
+
+	fconf, _ := config.Load(*configFile)
 
 	ip, _ := p2pUtil.GetLocalIP()
 	ctx := context.Background()
@@ -46,6 +49,7 @@ func main() {
 	conf := bootstrap.Config{
 		BootstrapPeers: bootstrapPeers,
 		MinPeers:       0,
+		NetworkID:      fconf.NetworkID,
 	}
 
 	bootstrap.Bootstrap(p2pModule, conf)

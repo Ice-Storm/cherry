@@ -31,11 +31,11 @@ type P2P struct {
 }
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
-	p2pLogger.Info("New p2p module")
+	p2pLogger.Debug("New p2p module")
 	host, err := genesisNode(ctx, genesisMultiAddr)
 
 	if err != nil {
-		p2pLogger.Error("Cant't new p2p module: ", err)
+		p2pLogger.Fatal("Cant't new p2p module: ", err)
 	}
 
 	return &P2P{
@@ -65,6 +65,12 @@ func (n *P2P) HandleStream(s libnet.Stream) {
 	n.swapPeersInfo(s)
 }
 
+func (n *P2P) swapPeersInfo(s libnet.Stream) {
+	p2pLogger.Info("Got a new stream!")
+	n.readData(s)
+	n.writeData(s)
+}
+
 func (n *P2P) ReadString(IO interface{}) (string, error) {
 	switch stream := IO.(type) {
 	case *bufio.ReadWriter:
@@ -84,12 +90,6 @@ func (n *P2P) WriteBytes(stream *bufio.Writer, str []byte) error {
 func (n *P2P) WriteString(stream *bufio.Writer, str string) error {
 	stream.WriteString(str)
 	return stream.Flush()
-}
-
-func (n *P2P) swapPeersInfo(s libnet.Stream) {
-	p2pLogger.Info("Got a new stream!")
-	n.readData(s)
-	n.writeData(s)
 }
 
 func (n *P2P) readData(s libnet.Stream) {

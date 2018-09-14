@@ -1,0 +1,6 @@
+{
+  "networkID": "cherry-test",
+  "BootstrapPeers": [
+    "/ip4/172.16.101.221/tcp/1111/ipfs/QmPaBUHkj3wjWDKvm6zGvHewMPcm7fr7V8FLc4dL4F3XkE"
+  ]
+}

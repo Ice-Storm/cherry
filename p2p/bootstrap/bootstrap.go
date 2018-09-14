@@ -18,11 +18,12 @@ import (
 )
 
 var bootstrapLogger = clogging.MustGetLogger("bootstrap")
-var preFix = "meet me here test"
+var networkID = "meet me here test"
 
 type Config struct {
 	BootstrapPeers []string
 	MinPeers       int
+	NetworkID      string
 }
 
 func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
@@ -58,7 +59,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 
 	// We use a rendezvous point "meet me here" to announce our location.
 	// This is like telling your friends to meet you at the Eiffel Tower.
-	rendezvousPoint, _ := cid.NewPrefixV1(cid.Raw, multihash.SHA2_256).Sum([]byte(preFix))
+	rendezvousPoint, _ := cid.NewPrefixV1(cid.Raw, multihash.SHA2_256).Sum([]byte(c.NetworkID))
 
 	bootstrapLogger.Info("announcing ourselves...")
 	tctx, cancel := context.WithTimeout(ctx, time.Second*10)

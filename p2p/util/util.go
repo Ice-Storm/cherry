@@ -2,7 +2,12 @@ package util
 
 import (
 	"cherrychain/common/clogging"
+	"errors"
 	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 var p2pUtilLogger = clogging.MustGetLogger("P2P")
@@ -21,4 +26,23 @@ func GetLocalIP() (string, error) {
 		}
 	}
 	return "0.0.0.0", err
+}
+
+func GetCurrentPath() (string, error) {
+	file, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.Abs(file)
+	if err != nil {
+		return "", err
+	}
+	i := strings.LastIndex(path, "/")
+	if i < 0 {
+		i = strings.LastIndex(path, "\\")
+	}
+	if i < 0 {
+		return "", errors.New(`error: Can't find "/" or "\".`)
+	}
+	return string(path[0 : i+1]), nil
 }
