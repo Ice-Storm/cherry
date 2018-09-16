@@ -15,11 +15,11 @@ go:
 git:
   depth: 1
 
-install:
-  - make deps
-
 notifications:
   email: false
+
+before_script:
+  - make deps
 
 script:
   - go build main.go
