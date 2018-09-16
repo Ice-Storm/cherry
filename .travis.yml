@@ -22,6 +22,6 @@ notifications:
   email: false
 
 script:
-  #- go build main.go
+  - go build main.go
  
   
