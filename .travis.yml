@@ -12,17 +12,18 @@ go:
   - master
   - 1.9.x
 
-git:
-  depth: 1
-
 install:
   - make deps
-
-notifications:
-  email: false
 
 script:
   - make build
   - make publish
+
+cache:
+  directories:
+    - $GOPATH/src/gx
+
+notifications:
+  email: false
  
   
