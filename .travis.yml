@@ -22,9 +22,7 @@ notifications:
   email: false
 
 script:
-  # - go test
-
-deploy:
-  - go build main.go
+  - make build
+  - make publish
  
   

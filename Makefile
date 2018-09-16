@@ -8,5 +8,8 @@ deps: gx
 	gx --verbose install --global
 	gx-go rewrite
 
+build: deps
+	go build main.go
+
 publish:
 	gx-go rewrite --undo
