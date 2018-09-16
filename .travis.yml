@@ -16,8 +16,9 @@ install:
   - make deps
 
 script:
-  - make build
-  - make publish
+    - go test
+  # - make build
+  # - make publish
 
 cache:
   directories:
