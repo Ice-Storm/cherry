@@ -16,7 +16,7 @@ install:
   - make deps
 
 script:
-    - go test
+  #  - go test
   # - make build
   # - make publish
 
