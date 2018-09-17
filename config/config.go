@@ -4,6 +4,7 @@ import (
 	"cherrychain/common/clogging"
 	"cherrychain/p2p/util"
 
+	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/spf13/viper"
 )
 
@@ -13,6 +14,7 @@ type CherryConfig struct {
 	Conf           *viper.Viper
 	BootstrapPeers []string
 	NetworkID      string
+	ProtocolID     protocol.ID
 }
 
 // Load config file
@@ -37,9 +39,16 @@ func Load(fileName string) (*CherryConfig, error) {
 		confLogger.Fatal("Network id not provided")
 	}
 
+	protocolID := conf.GetString("protocolID")
+
+	if protocolID == "" {
+		confLogger.Fatal("protocolID id not provided")
+	}
+
 	return &CherryConfig{
 		Conf:           conf,
 		BootstrapPeers: conf.GetStringSlice("BootstrapPeers"),
 		NetworkID:      networkID,
+		ProtocolID:     protocol.ID(protocolID),
 	}, nil
 }

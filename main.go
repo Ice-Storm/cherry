@@ -22,8 +22,6 @@ var bootstrapPeers = []string{
 	// "/ip4/172.16.101.215/tcp/1121/ipfs/QmaiU2vZtq9LcSfh77LJzN4vHQKEHhRt3j343P6jCDjXrJ",
 }
 
-const protocolID = "/cherryCahin/1.0"
-
 var mainLogger = clogging.MustGetLogger("Main")
 
 func main() {
@@ -43,13 +41,14 @@ func main() {
 		bootstrapPeers = append(bootstrapPeers, *dest)
 	}
 
-	p2pModule.Host.SetStreamHandler(protocolID, p2pModule.HandleStream)
-	fmt.Printf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty())
+	p2pModule.Host.SetStreamHandler(fconf.ProtocolID, p2pModule.HandleStream)
+	mainLogger.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty()))
 
 	conf := bootstrap.Config{
 		BootstrapPeers: bootstrapPeers,
 		MinPeers:       0,
 		NetworkID:      fconf.NetworkID,
+		ProtocolID:     fconf.ProtocolID,
 	}
 
 	bootstrap.Bootstrap(p2pModule, conf)

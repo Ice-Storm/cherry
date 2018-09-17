@@ -14,6 +14,7 @@ import (
 	ipfsaddr "github.com/ipfs/go-ipfs-addr"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
+	protocol "github.com/libp2p/go-libp2p-protocol"
 	multihash "github.com/multiformats/go-multihash"
 )
 
@@ -24,6 +25,7 @@ type Config struct {
 	BootstrapPeers []string
 	MinPeers       int
 	NetworkID      string
+	ProtocolID     protocol.ID
 }
 
 func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
@@ -84,7 +86,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 		if p.ID == p2pModule.Host.ID() || len(p.Addrs) == 0 {
 			continue
 		}
-		s, err := p2pModule.Host.NewStream(ctx, p.ID, "/cherryCahin/1.0")
+		s, err := p2pModule.Host.NewStream(ctx, p.ID, c.ProtocolID)
 		if err != nil {
 			bootstrapLogger.Error("Can't connect", err)
 		} else {
