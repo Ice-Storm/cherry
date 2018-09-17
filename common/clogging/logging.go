@@ -73,3 +73,13 @@ func SetModuleLevel(module string, level string) (string, error) {
 	}
 	return logLevel.String(), err
 }
+
+// SetLogLevel is used to set all modules log level
+func SetLogLevel(level string) error {
+	for module := range modules {
+		if _, e := SetModuleLevel(module, level); e != nil {
+			return e
+		}
+	}
+	return nil
+}
