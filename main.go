@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 
+	"cherrychain/commands"
 	"cherrychain/common/clogging"
 	config "cherrychain/config"
 	"cherrychain/p2p"
@@ -25,24 +25,19 @@ var bootstrapPeers = []string{
 var mainLogger = clogging.MustGetLogger("Main")
 
 func main() {
-	port := flag.Int("sp", 3000, "listen port")
-	dest := flag.String("d", "", "Dest MultiAddr String")
-	configFile := flag.String("f", "cherry", "Config file name")
-	flag.Parse()
-
-	fconf, _ := config.Load(*configFile)
-
+	cflag := commands.CommandInit()
+	fconf, _ := config.Load(cflag.Fconf)
 	ip, _ := p2pUtil.GetLocalIP()
 	ctx := context.Background()
 
-	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
+	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, cflag.Port))
 
-	if *dest != "" {
-		bootstrapPeers = append(bootstrapPeers, *dest)
+	if cflag.Dest != "" {
+		bootstrapPeers = append(bootstrapPeers, cflag.Dest)
 	}
 
 	p2pModule.Host.SetStreamHandler(fconf.ProtocolID, p2pModule.HandleStream)
-	mainLogger.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s\n", ip, *port, p2pModule.Host.ID().Pretty()))
+	mainLogger.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s -f cherry\n", ip, *port, p2pModule.Host.ID().Pretty()))
 
 	conf := bootstrap.Config{
 		BootstrapPeers: bootstrapPeers,
@@ -52,6 +47,5 @@ func main() {
 	}
 
 	bootstrap.Bootstrap(p2pModule, conf)
-
 	select {}
 }

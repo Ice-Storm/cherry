@@ -50,6 +50,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 				bootstrapLogger.Info("Invalid ipfs address")
 			}
 			peerinfo, _ := peerstore.InfoFromP2pAddr(iaddr.Multiaddr())
+			p2pModule.Host.Peerstore().AddAddrs(peerinfo.ID, peerinfo.Addrs, peerstore.PermanentAddrTTL)
 			if err := p2pModule.Host.Connect(ctx, *peerinfo); err != nil {
 				bootstrapLogger.Error(err)
 			} else {
