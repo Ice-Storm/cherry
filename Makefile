@@ -9,7 +9,7 @@ deps: gx
 	gx-go rewrite
 
 build: deps
-	export PATH=$PATH:${TRAVIS_HOME}/gopath/src/github.com/Ice-Storm/cherrychain
+	export PATH=${PATH}:${TRAVIS_HOME}/gopath/src/github.com/Ice-Storm/cherrychain
 	go build main.go
 
 publish:
