@@ -10,6 +10,7 @@ deps: gx
 
 build: deps
 	export PATH=${PATH}:${TRAVIS_HOME}/gopath/src/github.com/Ice-Storm/cherrychain
+	export GOPATH=${PATH}:${TRAVIS_HOME}/gopath/src/github.com/Ice-Storm/cherrychain
 	go build main.go
 
 publish:
