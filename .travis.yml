@@ -17,7 +17,7 @@ install:
 
 script:
   #  - go test
-  # - make build
+  - make build
   # - make publish
 
 cache:
