@@ -37,13 +37,14 @@ func main() {
 	}
 
 	p2pModule.Host.SetStreamHandler(fconf.ProtocolID, p2pModule.HandleStream)
-	mainLogger.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s -f cherry\n", ip, *port, p2pModule.Host.ID().Pretty()))
+	mainLogger.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s -f cherry\n", ip, cflag.Port, p2pModule.Host.ID().Pretty()))
 
 	conf := bootstrap.Config{
 		BootstrapPeers: bootstrapPeers,
 		MinPeers:       0,
 		NetworkID:      fconf.NetworkID,
 		ProtocolID:     fconf.ProtocolID,
+		Eventhub:       p2pModule.EventHub,
 	}
 
 	bootstrap.Bootstrap(p2pModule, conf)

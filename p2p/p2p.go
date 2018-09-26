@@ -10,12 +10,13 @@ import (
 	"time"
 
 	"cherrychain/common/clogging"
+	"cherrychain/p2p/eventhub"
 
 	"github.com/juju/ratelimit"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-host"
-	libnet "github.com/libp2p/go-libp2p-net"
+	inet "github.com/libp2p/go-libp2p-net"
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
@@ -26,6 +27,7 @@ var mutex = &sync.Mutex{}
 type P2P struct {
 	Host      host.Host
 	RateLimit *ratelimit.Bucket
+	EventHub  *eventhub.EventHub
 }
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
@@ -33,12 +35,19 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	host, err := genesisNode(ctx, genesisMultiAddr)
 
 	if err != nil {
-		p2pLogger.Fatal("Cant't new p2p module: ", err)
+		p2pLogger.Fatal("Cant't create p2p module: ", err)
+	}
+
+	eh, err := eventhub.New()
+
+	if err != nil {
+		p2pLogger.Fatal("Cant't create p2p eventhub module: ", err)
 	}
 
 	return &P2P{
 		Host:      host,
 		RateLimit: ratelimit.NewBucketWithRate(5, int64(100)),
+		EventHub:  eh,
 	}
 }
 
@@ -59,11 +68,13 @@ func genesisNode(ctx context.Context, genesisMultiAddr string) (host.Host, error
 	return host, nil
 }
 
-func (n *P2P) HandleStream(s libnet.Stream) {
+func (n *P2P) HandleStream(s inet.Stream) {
+	p2pLogger.Info("Open new stream")
+	n.EventHub.Notifee.OpenedStream(n.Host.Network(), s)
 	n.swapPeersInfo(s)
 }
 
-func (n *P2P) swapPeersInfo(s libnet.Stream) {
+func (n *P2P) swapPeersInfo(s inet.Stream) {
 	p2pLogger.Info("Got a new stream!")
 	n.readData(s)
 	n.writeData(s)
@@ -90,7 +101,7 @@ func (n *P2P) WriteString(stream *bufio.Writer, str string) error {
 	return stream.Flush()
 }
 
-func (n *P2P) readData(s libnet.Stream) {
+func (n *P2P) readData(s inet.Stream) {
 	rw := bufio.NewReader(s)
 	go func() {
 		for {
@@ -108,7 +119,7 @@ func (n *P2P) readData(s libnet.Stream) {
 	}()
 }
 
-func (n *P2P) writeData(s libnet.Stream) {
+func (n *P2P) writeData(s inet.Stream) {
 	rw := bufio.NewWriter(s)
 	stdReader := bufio.NewReader(os.Stdin)
 	go func() {

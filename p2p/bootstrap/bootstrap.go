@@ -10,6 +10,8 @@ import (
 	"cherrychain/common/clogging"
 	"cherrychain/p2p"
 
+	"cherrychain/p2p/eventhub"
+
 	cid "github.com/ipfs/go-cid"
 	ipfsaddr "github.com/ipfs/go-ipfs-addr"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -19,13 +21,13 @@ import (
 )
 
 var bootstrapLogger = clogging.MustGetLogger("bootstrap")
-var networkID = "meet me here test"
 
 type Config struct {
 	BootstrapPeers []string
 	MinPeers       int
 	NetworkID      string
 	ProtocolID     protocol.ID
+	Eventhub       *eventhub.EventHub
 }
 
 func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
@@ -91,8 +93,9 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 		if err != nil {
 			bootstrapLogger.Error("Can't connect", err)
 		} else {
-			p2pModule.HandleStream(s)
 			bootstrapLogger.Info("Connected to: ", p)
+			c.Eventhub.Notifee.Connected(p2pModule.Host.Network(), s.Conn())
+			p2pModule.HandleStream(s)
 		}
 	}
 
