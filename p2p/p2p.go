@@ -32,7 +32,14 @@ type P2P struct {
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	p2pLogger.Debug("New p2p module")
-	host, err := genesisNode(ctx, genesisMultiAddr)
+
+	sourceMultiAddr, err := multiaddr.NewMultiaddr(genesisMultiAddr)
+
+	if err != nil {
+		p2pLogger.Fatal("Invalid address: ", err)
+	}
+
+	host, err := genesisNode(ctx, sourceMultiAddr)
 
 	if err != nil {
 		p2pLogger.Fatal("Cant't create p2p module: ", err)
@@ -44,6 +51,12 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 		p2pLogger.Fatal("Cant't create p2p eventhub module: ", err)
 	}
 
+	eh.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
+		p2pLogger.Info("Cherrychain start .....")
+	}
+
+	eh.Notifee.Listen(host.Network(), sourceMultiAddr)
+
 	return &P2P{
 		Host:      host,
 		RateLimit: ratelimit.NewBucketWithRate(5, int64(100)),
@@ -51,9 +64,7 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	}
 }
 
-func genesisNode(ctx context.Context, genesisMultiAddr string) (host.Host, error) {
-	sourceMultiAddr, _ := multiaddr.NewMultiaddr(genesisMultiAddr)
-
+func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (host.Host, error) {
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 
 	if err != nil {
@@ -62,7 +73,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr string) (host.Host, error
 
 	host, _ := libp2p.New(
 		ctx,
-		libp2p.ListenAddrs(sourceMultiAddr),
+		libp2p.ListenAddrs(genesisMultiAddr),
 		libp2p.Identity(prvKey),
 	)
 	return host, nil
@@ -75,7 +86,6 @@ func (n *P2P) HandleStream(s inet.Stream) {
 }
 
 func (n *P2P) swapPeersInfo(s inet.Stream) {
-	p2pLogger.Info("Got a new stream!")
 	n.readData(s)
 	n.writeData(s)
 }
