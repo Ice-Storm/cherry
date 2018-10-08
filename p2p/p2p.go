@@ -24,6 +24,8 @@ var p2pLogger = clogging.MustGetLogger("P2P")
 
 var mutex = &sync.Mutex{}
 
+const MessageSizeMax = 1 << 22 // 4 MB
+
 type P2P struct {
 	Host      host.Host
 	RateLimit *ratelimit.Bucket
@@ -112,25 +114,27 @@ func (n *P2P) WriteString(stream *bufio.Writer, str string) error {
 }
 
 func (n *P2P) readData(s inet.Stream) {
-	rw := bufio.NewReader(s)
 	go func() {
+		bb := make([]byte, MessageSizeMax)
+
 		for {
 			if _, isTake := n.RateLimit.TakeMaxDuration(1, 500*time.Millisecond); !isTake {
 				continue
 			}
-			str, _ := n.ReadString(rw)
-			if str == "" {
+			n, err := s.Read(bb)
+			if err != nil {
+				p2pLogger.Error("Read error", err)
 				return
 			}
-			if str != "\n" {
-				fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
+			if n == 0 {
+				return
 			}
+			fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bb))
 		}
 	}()
 }
 
 func (n *P2P) writeData(s inet.Stream) {
-	rw := bufio.NewWriter(s)
 	stdReader := bufio.NewReader(os.Stdin)
 	go func() {
 		for {
@@ -139,7 +143,7 @@ func (n *P2P) writeData(s inet.Stream) {
 			if err != nil {
 				panic(err)
 			}
-			n.WriteBytes(rw, []byte(sendData))
+			s.Write([]byte(sendData))
 		}
 	}()
 }
