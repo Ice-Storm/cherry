@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"cherrychain/common/clogging"
-	"cherrychain/p2p/eventhub"
+	"cherrychain/p2p/notify"
 
 	"github.com/juju/ratelimit"
 	libp2p "github.com/libp2p/go-libp2p"
@@ -29,7 +29,7 @@ const MessageSizeMax = 1 << 22 // 4 MB
 type P2P struct {
 	Host      host.Host
 	RateLimit *ratelimit.Bucket
-	EventHub  *eventhub.EventHub
+	Notify    *notify.Notify
 }
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
@@ -47,22 +47,22 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 		p2pLogger.Fatal("Cant't create p2p module: ", err)
 	}
 
-	eh, err := eventhub.New()
+	nt, err := notify.New()
 
 	if err != nil {
-		p2pLogger.Fatal("Cant't create p2p eventhub module: ", err)
+		p2pLogger.Fatal("Cant't create p2p notify module: ", err)
 	}
 
-	eh.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
+	nt.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
 		p2pLogger.Info("Cherrychain start .....")
 	}
 
-	eh.Notifee.Listen(host.Network(), sourceMultiAddr)
+	nt.Notifee.Listen(host.Network(), sourceMultiAddr)
 
 	return &P2P{
 		Host:      host,
 		RateLimit: ratelimit.NewBucketWithRate(5, int64(100)),
-		EventHub:  eh,
+		Notify:    nt,
 	}
 }
 
@@ -83,7 +83,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 
 func (n *P2P) HandleStream(s inet.Stream) {
 	p2pLogger.Info("Open new stream")
-	n.EventHub.Notifee.OpenedStream(n.Host.Network(), s)
+	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 	n.swapPeersInfo(s)
 }
 

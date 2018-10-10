@@ -1,4 +1,4 @@
-package eventhub
+package notify
 
 import (
 	"sync"
@@ -6,17 +6,17 @@ import (
 	inet "github.com/libp2p/go-libp2p-net"
 )
 
-type EventHub struct {
+type Notify struct {
 	Notifee inet.NotifyBundle
 }
 
 var once sync.Once
-var eh EventHub
+var eh Notify
 
-func New() (*EventHub, error) {
+func New() (*Notify, error) {
 	once.Do(func() {
 		var notifee inet.NotifyBundle
-		eh = EventHub{
+		eh = Notify{
 			Notifee: notifee,
 		}
 	})

@@ -44,7 +44,7 @@ func main() {
 		MinPeers:       0,
 		NetworkID:      fconf.NetworkID,
 		ProtocolID:     fconf.ProtocolID,
-		Eventhub:       p2pModule.EventHub,
+		Notify:         p2pModule.Notify,
 	}
 
 	bootstrap.Bootstrap(p2pModule, conf)
