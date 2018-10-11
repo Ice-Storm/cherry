@@ -83,8 +83,28 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 
 func (n *P2P) HandleStream(s inet.Stream) {
 	p2pLogger.Info("Open new stream")
+	sysEvent, _ := n.Notify.SysEventHub.Sub("system")
+	n.Notify.PubSysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
+	go func() {
+		for event := range sysEvent {
+			switch (event.(*notify.SysEvent)).SysType {
+			case notify.NetworkOpenedStream:
+				n.WriteAll(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+			}
+		}
+	}()
+}
+
+func (n *P2P) WriteAll(s inet.Stream) {
+	msgChan, _ := n.Notify.UserEventHub.Sub("user")
+	p2pLogger.Info("WriteAll\n")
 	n.swapPeersInfo(s)
+
+	for msg := range msgChan {
+		p2pLogger.Info("\nWriteAll -> chan ->", msg)
+		s.Write(msg.([]byte))
+	}
 }
 
 func (n *P2P) swapPeersInfo(s inet.Stream) {
@@ -143,7 +163,8 @@ func (n *P2P) writeData(s inet.Stream) {
 			if err != nil {
 				panic(err)
 			}
-			s.Write([]byte(sendData))
+			n.Notify.UserEventHub.Pub([]byte(sendData), "user")
+			//s.Write([]byte(sendData))
 		}
 	}()
 }
