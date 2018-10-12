@@ -90,19 +90,20 @@ func (n *P2P) HandleStream(s inet.Stream) {
 		for event := range sysEvent {
 			switch (event.(*notify.SysEvent)).SysType {
 			case notify.NetworkOpenedStream:
-				n.WriteAll(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+				n.broadcast(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+			default:
+				panic("Invalid system event type")
 			}
 		}
 	}()
 }
 
-func (n *P2P) WriteAll(s inet.Stream) {
+func (n *P2P) broadcast(s inet.Stream) {
 	msgChan, _ := n.Notify.UserEventHub.Sub("user")
-	p2pLogger.Info("WriteAll\n")
 	n.swapPeersInfo(s)
 
 	for msg := range msgChan {
-		p2pLogger.Info("\nWriteAll -> chan ->", msg)
+		p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
 		s.Write(msg.([]byte))
 	}
 }
@@ -164,7 +165,6 @@ func (n *P2P) writeData(s inet.Stream) {
 				panic(err)
 			}
 			n.Notify.UserEventHub.Pub([]byte(sendData), "user")
-			//s.Write([]byte(sendData))
 		}
 	}()
 }

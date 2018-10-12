@@ -1,9 +1,10 @@
 package notify
 
 import (
-	"cherrychain/p2p/eventhub"
-	"fmt"
 	"sync"
+
+	"cherrychain/common/clogging"
+	"cherrychain/p2p/eventhub"
 
 	inet "github.com/libp2p/go-libp2p-net"
 )
@@ -20,12 +21,15 @@ type SysEvent struct {
 }
 
 const (
+	SysEventMaxSize     = 100
+	UserEventMaxSize    = 100
 	NetworkOpenedStream = iota
 )
 
 var (
-	once sync.Once
-	eh   Notify
+	once         sync.Once
+	eh           Notify
+	notifyLogger = clogging.MustGetLogger("NOTIFY")
 )
 
 func New() (*Notify, error) {
@@ -33,8 +37,8 @@ func New() (*Notify, error) {
 		var notifee inet.NotifyBundle
 		eh = Notify{
 			Notifee:      notifee,
-			SysEventHub:  eventhub.New(100),
-			UserEventHub: eventhub.New(100),
+			SysEventHub:  eventhub.New(SysEventMaxSize),
+			UserEventHub: eventhub.New(UserEventMaxSize),
 		}
 	})
 	return &eh, nil
@@ -42,7 +46,7 @@ func New() (*Notify, error) {
 
 func (n *Notify) PubSysOpenedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.OpenedStreamF = func(inet.Network, inet.Stream) {
-		fmt.Printf("PubOpenedStream....")
+		notifyLogger.Info("PubOpenedStream....")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkOpenedStream,
 			Meta:    s,

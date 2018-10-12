@@ -40,7 +40,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 		bootstrapLogger.Fatal("Cant't create DHT")
 	}
 
-	// Let's connect to the bootstrap nodes first. They will tell us about the other nodes in the network.
+	// They will tell us about the other nodes in the network.
 	var wg sync.WaitGroup
 	for _, addr := range c.BootstrapPeers {
 		wg.Add(1)
