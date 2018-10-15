@@ -19,7 +19,7 @@ import (
 	multihash "github.com/multiformats/go-multihash"
 )
 
-var bootstrapLogger = clogging.MustGetLogger("bootstrap")
+var bootstrapLogger = clogging.MustGetLogger("BOOTSTRAP")
 
 type Config struct {
 	BootstrapPeers []string

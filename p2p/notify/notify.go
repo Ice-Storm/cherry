@@ -23,6 +23,8 @@ type SysEvent struct {
 const (
 	SysEventMaxSize     = 100
 	UserEventMaxSize    = 100
+	SYS_CHAN_TYPE       = "SYSTEM"
+	USER_CHAN_TYPE      = "USER"
 	NetworkOpenedStream = iota
 )
 
@@ -50,6 +52,6 @@ func (n *Notify) PubSysOpenedStream(network inet.Network, s inet.Stream) {
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkOpenedStream,
 			Meta:    s,
-		}, "system")
+		}, SYS_CHAN_TYPE)
 	}
 }

@@ -22,7 +22,7 @@ var bootstrapPeers = []string{
 	// "/ip4/172.16.101.215/tcp/1121/ipfs/QmaiU2vZtq9LcSfh77LJzN4vHQKEHhRt3j343P6jCDjXrJ",
 }
 
-var mainLogger = clogging.MustGetLogger("Main")
+var mainLogger = clogging.MustGetLogger("MAIN")
 
 func main() {
 	cflag := commands.CommandInit()

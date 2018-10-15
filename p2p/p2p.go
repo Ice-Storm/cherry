@@ -83,7 +83,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 
 func (n *P2P) HandleStream(s inet.Stream) {
 	p2pLogger.Info("Open new stream")
-	sysEvent, _ := n.Notify.SysEventHub.Sub("system")
+	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS_CHAN_TYPE)
 	n.Notify.PubSysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 	go func() {
@@ -99,7 +99,7 @@ func (n *P2P) HandleStream(s inet.Stream) {
 }
 
 func (n *P2P) broadcast(s inet.Stream) {
-	msgChan, _ := n.Notify.UserEventHub.Sub("user")
+	msgChan, _ := n.Notify.UserEventHub.Sub(notify.USER_CHAN_TYPE)
 	n.swapPeersInfo(s)
 
 	for msg := range msgChan {
@@ -111,27 +111,6 @@ func (n *P2P) broadcast(s inet.Stream) {
 func (n *P2P) swapPeersInfo(s inet.Stream) {
 	n.readData(s)
 	n.writeData(s)
-}
-
-func (n *P2P) ReadString(IO interface{}) (string, error) {
-	switch stream := IO.(type) {
-	case *bufio.ReadWriter:
-		return stream.ReadString('\n')
-	case *bufio.Reader:
-		return stream.ReadString('\n')
-	default:
-		panic("Invalid IO interface")
-	}
-}
-
-func (n *P2P) WriteBytes(stream *bufio.Writer, str []byte) error {
-	n.WriteString(stream, string(append(str, '\n')))
-	return nil
-}
-
-func (n *P2P) WriteString(stream *bufio.Writer, str string) error {
-	stream.WriteString(str)
-	return stream.Flush()
 }
 
 func (n *P2P) readData(s inet.Stream) {
@@ -164,7 +143,7 @@ func (n *P2P) writeData(s inet.Stream) {
 			if err != nil {
 				panic(err)
 			}
-			n.Notify.UserEventHub.Pub([]byte(sendData), "user")
+			n.Notify.UserEventHub.Pub([]byte(sendData), notify.USER_CHAN_TYPE)
 		}
 	}()
 }
