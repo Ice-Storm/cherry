@@ -6,6 +6,7 @@ type Pubsub interface {
 	Unsub(topics ...string) error
 	Pub(msg interface{}, topics ...string) error
 	Close() error
+	Shutdown() error
 }
 
 type EventHub struct {
