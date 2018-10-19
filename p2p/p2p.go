@@ -1,11 +1,9 @@
 package p2p
 
 import (
-	"bufio"
 	"context"
 	"crypto/rand"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -100,17 +98,12 @@ func (n *P2P) HandleStream(s inet.Stream) {
 
 func (n *P2P) broadcast(s inet.Stream) {
 	msgChan, _ := n.Notify.UserEventHub.Sub(notify.USER_CHAN_TYPE)
-	n.swapPeersInfo(s)
+	n.readData(s)
 
 	for msg := range msgChan {
 		p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
 		s.Write(msg.([]byte))
 	}
-}
-
-func (n *P2P) swapPeersInfo(s inet.Stream) {
-	n.readData(s)
-	n.writeData(s)
 }
 
 func (n *P2P) readData(s inet.Stream) {
@@ -134,16 +127,6 @@ func (n *P2P) readData(s inet.Stream) {
 	}()
 }
 
-func (n *P2P) writeData(s inet.Stream) {
-	stdReader := bufio.NewReader(os.Stdin)
-	go func() {
-		for {
-			fmt.Print("> ")
-			sendData, err := stdReader.ReadString('\n')
-			if err != nil {
-				panic(err)
-			}
-			n.Notify.UserEventHub.Pub([]byte(sendData), notify.USER_CHAN_TYPE)
-		}
-	}()
+func (n *P2P) Write(data []byte) {
+	n.Notify.UserEventHub.Pub(data, notify.USER_CHAN_TYPE)
 }

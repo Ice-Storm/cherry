@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
 
 	"cherrychain/commands"
 	"cherrychain/common/clogging"
@@ -48,5 +50,18 @@ func main() {
 	}
 
 	bootstrap.Bootstrap(p2pModule, conf)
+
+	stdReader := bufio.NewReader(os.Stdin)
+	go func() {
+		for {
+			fmt.Print("> ")
+			sendData, err := stdReader.ReadString('\n')
+			if err != nil {
+				panic(err)
+			}
+			p2pModule.Write([]byte(sendData))
+		}
+	}()
+
 	select {}
 }
