@@ -3,9 +3,7 @@ package p2p
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"sync"
-	"time"
 
 	"cherrychain/common/clogging"
 	"cherrychain/p2p/notify"
@@ -81,7 +79,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 
 func (n *P2P) HandleStream(s inet.Stream) {
 	p2pLogger.Info("Open new stream")
-	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS_CHAN_TYPE)
+	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS)
 	n.Notify.PubSysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 	go func() {
@@ -97,7 +95,7 @@ func (n *P2P) HandleStream(s inet.Stream) {
 }
 
 func (n *P2P) broadcast(s inet.Stream) {
-	msgChan, _ := n.Notify.UserEventHub.Sub(notify.USER_CHAN_TYPE)
+	msgChan, _ := n.Notify.WritePB.Sub(notify.WRITE)
 	n.readData(s)
 
 	for msg := range msgChan {
@@ -108,25 +106,30 @@ func (n *P2P) broadcast(s inet.Stream) {
 
 func (n *P2P) readData(s inet.Stream) {
 	go func() {
-		bb := make([]byte, MessageSizeMax)
+		message := make([]byte, MessageSizeMax)
 
 		for {
-			if _, isTake := n.RateLimit.TakeMaxDuration(1, 500*time.Millisecond); !isTake {
-				continue
-			}
-			n, err := s.Read(bb)
-			if err != nil {
-				p2pLogger.Error("Read error", err)
+			rn, err := s.Read(message)
+			if err != nil || rn == 0 {
+				p2pLogger.Debug("Read error", err)
 				return
 			}
-			if n == 0 {
-				return
-			}
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bb))
+			n.Notify.ReadPB.Pub(message, notify.READ)
 		}
 	}()
 }
 
 func (n *P2P) Write(data []byte) {
-	n.Notify.UserEventHub.Pub(data, notify.USER_CHAN_TYPE)
+	n.Notify.WritePB.Pub(data, notify.WRITE)
+}
+
+func (n *P2P) Read() {
+	msgChan, _ := n.Notify.ReadPB.Sub(notify.READ)
+	for msg := range msgChan {
+		smsg := msg.([]byte)
+		if len(smsg) == 0 {
+			continue
+		}
+		p2pLogger.Info(string(smsg))
+	}
 }

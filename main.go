@@ -63,5 +63,11 @@ func main() {
 		}
 	}()
 
+	go func() {
+		for {
+			p2pModule.Read()
+		}
+	}()
+
 	select {}
 }
