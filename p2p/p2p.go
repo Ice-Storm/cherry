@@ -8,7 +8,6 @@ import (
 	"cherrychain/common/clogging"
 	"cherrychain/p2p/notify"
 
-	"github.com/juju/ratelimit"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-host"
@@ -23,9 +22,8 @@ var mutex = &sync.Mutex{}
 const MessageSizeMax = 1 << 22 // 4 MB
 
 type P2P struct {
-	Host      host.Host
-	RateLimit *ratelimit.Bucket
-	Notify    *notify.Notify
+	Host   host.Host
+	Notify *notify.Notify
 }
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
@@ -56,9 +54,8 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	nt.Notifee.Listen(host.Network(), sourceMultiAddr)
 
 	return &P2P{
-		Host:      host,
-		RateLimit: ratelimit.NewBucketWithRate(5, int64(100)),
-		Notify:    nt,
+		Host:   host,
+		Notify: nt,
 	}
 }
 
@@ -80,7 +77,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 func (n *P2P) HandleStream(s inet.Stream) {
 	p2pLogger.Info("Open new stream")
 	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS)
-	n.Notify.PubSysOpenedStream(n.Host.Network(), s)
+	n.Notify.SysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 	go func() {
 		for event := range sysEvent {

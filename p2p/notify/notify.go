@@ -50,9 +50,9 @@ func New() (*Notify, error) {
 	return &eh, nil
 }
 
-func (n *Notify) PubSysOpenedStream(network inet.Network, s inet.Stream) {
+func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.OpenedStreamF = func(inet.Network, inet.Stream) {
-		notifyLogger.Info("PubOpenedStream....")
+		notifyLogger.Info("OpenedStream....")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkOpenedStream,
 			Meta:    s,
