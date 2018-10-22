@@ -28,6 +28,7 @@ type P2P struct {
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	p2pLogger.Debug("New p2p module")
+	p2pLogger.Info("Cherrychain start .....")
 
 	sourceMultiAddr, err := multiaddr.NewMultiaddr(genesisMultiAddr)
 
@@ -47,10 +48,10 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 		p2pLogger.Fatal("Cant't create p2p notify module: ", err)
 	}
 
-	nt.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
-		p2pLogger.Info("Cherrychain start .....")
-	}
+	// Bind system event buf
+	nt.SysListen(host.Network(), sourceMultiAddr)
 
+	// Emit system listen event
 	nt.Notifee.Listen(host.Network(), sourceMultiAddr)
 
 	return &P2P{

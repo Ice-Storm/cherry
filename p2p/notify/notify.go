@@ -7,6 +7,7 @@ import (
 	"cherrychain/p2p/eventhub"
 
 	inet "github.com/libp2p/go-libp2p-net"
+	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
 type Notify struct {
@@ -22,13 +23,14 @@ type SysEvent struct {
 }
 
 const (
-	SysEventMaxSize     = 100
-	ReadBuf             = 100
-	WriteBuf            = 100
-	SYS                 = "SYSTEM"
-	WRITE               = "WRITE"
-	READ                = "READ"
-	NetworkOpenedStream = iota
+	SysEventMaxSize = 100
+	ReadBuf         = 100
+	WriteBuf        = 100
+	SYS             = "SYSTEM"
+	WRITE           = "WRITE"
+	READ            = "READ"
+	NetworkListen   = iota
+	NetworkOpenedStream
 )
 
 var (
@@ -50,9 +52,19 @@ func New() (*Notify, error) {
 	return &eh, nil
 }
 
+func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
+	n.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
+		notifyLogger.Info("System listen event")
+		n.SysEventHub.Pub(&SysEvent{
+			SysType: NetworkListen,
+			Meta:    ma,
+		}, SYS)
+	}
+}
+
 func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.OpenedStreamF = func(inet.Network, inet.Stream) {
-		notifyLogger.Info("OpenedStream....")
+		notifyLogger.Info("System OpenedStream event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkOpenedStream,
 			Meta:    s,
