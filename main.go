@@ -33,6 +33,7 @@ func main() {
 	ctx := context.Background()
 
 	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, cflag.Port))
+	p2pModule.StartSysEventLoop()
 
 	if cflag.Dest != "" {
 		bootstrapPeers = append(bootstrapPeers, cflag.Dest)

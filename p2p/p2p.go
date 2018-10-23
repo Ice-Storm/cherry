@@ -77,9 +77,12 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 
 func (n *P2P) HandleStream(s inet.Stream) {
 	p2pLogger.Info("Open new stream")
-	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS)
 	n.Notify.SysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
+}
+
+func (n *P2P) StartSysEventLoop() {
+	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS)
 	go func() {
 		for event := range sysEvent {
 			switch (event.(*notify.SysEvent)).SysType {
@@ -93,13 +96,15 @@ func (n *P2P) HandleStream(s inet.Stream) {
 }
 
 func (n *P2P) broadcast(s inet.Stream) {
-	msgChan, _ := n.Notify.WritePB.Sub(notify.WRITE)
-	n.readData(s)
+	go func(s inet.Stream) {
+		msgChan, _ := n.Notify.WritePB.Sub(notify.WRITE)
+		n.readData(s)
 
-	for msg := range msgChan {
-		p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
-		s.Write(msg.([]byte))
-	}
+		for msg := range msgChan {
+			p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
+			s.Write(msg.([]byte))
+		}
+	}(s)
 }
 
 func (n *P2P) readData(s inet.Stream) {
