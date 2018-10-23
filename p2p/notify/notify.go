@@ -30,6 +30,7 @@ const (
 	WRITE           = "WRITE"
 	READ            = "READ"
 	NetworkListen   = iota
+	NetworkConnected
 	NetworkOpenedStream
 )
 
@@ -58,6 +59,16 @@ func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkListen,
 			Meta:    ma,
+		}, SYS)
+	}
+}
+
+func (n *Notify) SysConnected(network inet.Network, c inet.Conn) {
+	n.Notifee.ConnectedF = func(inet.Network, inet.Conn) {
+		notifyLogger.Info("System Connected event")
+		n.SysEventHub.Pub(&SysEvent{
+			SysType: NetworkConnected,
+			Meta:    c,
 		}, SYS)
 	}
 }

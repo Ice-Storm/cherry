@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 	"sync"
 
 	"cherrychain/common/clogging"
@@ -86,6 +87,8 @@ func (n *P2P) StartSysEventLoop() {
 	go func() {
 		for event := range sysEvent {
 			switch (event.(*notify.SysEvent)).SysType {
+			case notify.NetworkConnected:
+				fmt.Printf("NetworkConnected ***")
 			case notify.NetworkOpenedStream:
 				n.broadcast(((event.(*notify.SysEvent)).Meta).(inet.Stream))
 			default:
