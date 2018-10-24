@@ -66,7 +66,9 @@ func main() {
 
 	go func() {
 		for {
-			p2pModule.Read()
+			cap := make([]byte, 1000)
+			n, _ := p2pModule.Read(cap)
+			fmt.Printf("\nread size %d -- string -- %s\n", n, string(cap))
 		}
 	}()
 

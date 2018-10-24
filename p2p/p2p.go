@@ -100,9 +100,9 @@ func (n *P2P) StartSysEventLoop() {
 
 func (n *P2P) broadcast(s inet.Stream) {
 	go func(s inet.Stream) {
+		defer s.Close()
 		msgChan, _ := n.Notify.WritePB.Sub(notify.WRITE)
 		n.readData(s)
-
 		for msg := range msgChan {
 			p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
 			s.Write(msg.([]byte))
@@ -112,15 +112,14 @@ func (n *P2P) broadcast(s inet.Stream) {
 
 func (n *P2P) readData(s inet.Stream) {
 	go func() {
-		message := make([]byte, MessageSizeMax)
-
+		msg := make([]byte, MessageSizeMax)
 		for {
-			rn, err := s.Read(message)
+			rn, err := s.Read(msg)
 			if err != nil || rn == 0 {
 				p2pLogger.Debug("Read error", err)
 				return
 			}
-			n.Notify.ReadPB.Pub(message, notify.READ)
+			n.Notify.ReadPB.Pub(msg, notify.READ)
 		}
 	}()
 }
@@ -129,13 +128,17 @@ func (n *P2P) Write(data []byte) {
 	n.Notify.WritePB.Pub(data, notify.WRITE)
 }
 
-func (n *P2P) Read() {
-	msgChan, _ := n.Notify.ReadPB.Sub(notify.READ)
+func (n *P2P) Read(cap []byte) (int, error) {
+	msgChan, err := n.Notify.ReadPB.Sub(notify.READ)
+	if err != nil {
+		return 0, err
+	}
 	for msg := range msgChan {
-		smsg := msg.([]byte)
-		if len(smsg) == 0 {
+		msgByte := msg.([]byte)
+		if len(msgByte) == 0 {
 			continue
 		}
-		p2pLogger.Info(string(smsg))
+		return copy(cap, msgByte), nil
 	}
+	return 0, nil
 }
