@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"cherrychain/commands"
 	"cherrychain/common/clogging"
@@ -32,8 +33,16 @@ func main() {
 	ip, _ := p2pUtil.GetLocalIP()
 	ctx := context.Background()
 
+	ctx, cancel := context.WithCancel(context.Background())
 	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, cflag.Port))
-	p2pModule.StartSysEventLoop()
+	p2pModule.StartSysEventLoop(ctx)
+
+	go func() {
+		time.AfterFunc(2000*time.Second, func() {
+			fmt.Printf("cancel")
+			cancel()
+		})
+	}()
 
 	if cflag.Dest != "" {
 		bootstrapPeers = append(bootstrapPeers, cflag.Dest)

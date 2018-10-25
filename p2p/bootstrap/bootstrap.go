@@ -93,7 +93,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 			bootstrapLogger.Error("Can't connect", err)
 		} else {
 			bootstrapLogger.Info("Connected to: ", p)
-			c.Notify.SysConnected(p2pModule.Host.Network(), s.Conn())
+			c.Notify.SysConnected(p2pModule.Host.Network(), s)
 			c.Notify.Notifee.Connected(p2pModule.Host.Network(), s.Conn())
 			p2pModule.HandleStream(s)
 		}

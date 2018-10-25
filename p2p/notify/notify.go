@@ -31,7 +31,9 @@ const (
 	READ            = "READ"
 	NetworkListen   = iota
 	NetworkConnected
+	NetworkDisconnected
 	NetworkOpenedStream
+	NetworkClosedStream
 )
 
 var (
@@ -63,12 +65,22 @@ func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
 	}
 }
 
-func (n *Notify) SysConnected(network inet.Network, c inet.Conn) {
+func (n *Notify) SysConnected(network inet.Network, s inet.Stream) {
 	n.Notifee.ConnectedF = func(inet.Network, inet.Conn) {
 		notifyLogger.Info("System Connected event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkConnected,
-			Meta:    c,
+			Meta:    s,
+		}, SYS)
+	}
+}
+
+func (n *Notify) SysDisconnected(network inet.Network, s inet.Stream) {
+	n.Notifee.DisconnectedF = func(inet.Network, inet.Conn) {
+		notifyLogger.Info("System Disconnected event")
+		n.SysEventHub.Pub(&SysEvent{
+			SysType: NetworkDisconnected,
+			Meta:    s,
 		}, SYS)
 	}
 }
@@ -78,6 +90,16 @@ func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 		notifyLogger.Info("System OpenedStream event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkOpenedStream,
+			Meta:    s,
+		}, SYS)
+	}
+}
+
+func (n *Notify) SysClosedStream(network inet.Network, s inet.Stream) {
+	n.Notifee.ClosedStreamF = func(inet.Network, inet.Stream) {
+		notifyLogger.Info("System ClosedStream event")
+		n.SysEventHub.Pub(&SysEvent{
+			SysType: NetworkClosedStream,
 			Meta:    s,
 		}, SYS)
 	}

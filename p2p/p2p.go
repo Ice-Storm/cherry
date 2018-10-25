@@ -3,7 +3,6 @@ package p2p
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"sync"
 
 	"cherrychain/common/clogging"
@@ -82,32 +81,50 @@ func (n *P2P) HandleStream(s inet.Stream) {
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 }
 
-func (n *P2P) StartSysEventLoop() {
+func (n *P2P) StartSysEventLoop(ctx context.Context) {
 	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS)
-	go func() {
+	go func(ctx context.Context) {
 		for event := range sysEvent {
 			switch (event.(*notify.SysEvent)).SysType {
 			case notify.NetworkConnected:
-				fmt.Printf("NetworkConnected ***")
+				n.Notify.SysDisconnected(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
+			case notify.NetworkDisconnected:
+				n.closeConnection(((event.(*notify.SysEvent)).Meta).(inet.Stream))
 			case notify.NetworkOpenedStream:
-				n.broadcast(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+				n.Notify.SysClosedStream(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
+				n.broadcast(ctx, ((event.(*notify.SysEvent)).Meta).(inet.Stream))
+			case notify.NetworkClosedStream:
+				n.closeStream(((event.(*notify.SysEvent)).Meta).(inet.Stream))
 			default:
 				panic("Invalid system event type")
 			}
 		}
-	}()
+	}(ctx)
 }
 
-func (n *P2P) broadcast(s inet.Stream) {
-	go func(s inet.Stream) {
+func (n *P2P) broadcast(ctx context.Context, s inet.Stream) {
+	go func(ctx context.Context, s inet.Stream) {
 		defer s.Close()
 		msgChan, _ := n.Notify.WritePB.Sub(notify.WRITE)
 		n.readData(s)
-		for msg := range msgChan {
-			p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
-			s.Write(msg.([]byte))
+		for {
+			select {
+			case msg := <-msgChan:
+				p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
+				s.Write(msg.([]byte))
+			case <-ctx.Done():
+				return
+			}
 		}
-	}(s)
+	}(ctx, s)
+}
+
+func (n *P2P) closeStream(s inet.Stream) {
+	s.Close()
+}
+
+func (n *P2P) closeConnection(s inet.Stream) {
+	s.Conn().Close()
 }
 
 func (n *P2P) readData(s inet.Stream) {
@@ -134,11 +151,21 @@ func (n *P2P) Read(cap []byte) (int, error) {
 		return 0, err
 	}
 	for msg := range msgChan {
-		msgByte := msg.([]byte)
-		if len(msgByte) == 0 {
+		msgBytes := msg.([]byte)
+		if len(msgBytes) == 0 {
 			continue
 		}
-		return copy(cap, msgByte), nil
+		return copy(cap, msgBytes), nil
 	}
 	return 0, nil
+}
+
+func (n *P2P) CloseStream(s inet.Stream) error {
+	n.Notify.Notifee.ClosedStream(n.Host.Network(), s)
+	return nil
+}
+
+func (n *P2P) CloseConnection(s inet.Stream) error {
+	n.Notify.Notifee.Disconnected(n.Host.Network(), s.Conn())
+	return nil
 }
