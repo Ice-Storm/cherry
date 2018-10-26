@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"sync"
 
 	"cherrychain/p2p/notify"
@@ -16,9 +17,10 @@ import (
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
-var log = logging.MustGetLogger("P2P")
-
-var mutex = &sync.Mutex{}
+var (
+	mutex = &sync.Mutex{}
+	log   = logging.MustGetLogger("P2P")
+)
 
 const MessageSizeMax = 1 << 22 // 4 MB
 
@@ -81,41 +83,52 @@ func (n *P2P) HandleStream(s inet.Stream) {
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 }
 
-func (n *P2P) StartSysEventLoop(ctx context.Context) {
-	sysEvent, _ := n.Notify.SysEventHub.Sub(notify.SYS)
-	go func(ctx context.Context) {
-		for event := range sysEvent {
-			switch (event.(*notify.SysEvent)).SysType {
-			case notify.NetworkConnected:
-				n.Notify.SysDisconnected(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
-			case notify.NetworkDisconnected:
-				n.closeConnection(((event.(*notify.SysEvent)).Meta).(inet.Stream))
-			case notify.NetworkOpenedStream:
-				n.Notify.SysClosedStream(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
-				n.broadcast(ctx, ((event.(*notify.SysEvent)).Meta).(inet.Stream))
-			case notify.NetworkClosedStream:
-				n.closeStream(((event.(*notify.SysEvent)).Meta).(inet.Stream))
-			default:
-				panic("Invalid system event type")
-			}
-		}
-	}(ctx)
-}
-
-func (n *P2P) broadcast(ctx context.Context, s inet.Stream) {
-	go func(ctx context.Context, s inet.Stream) {
-		defer s.Close()
-		msgChan, _ := n.Notify.WritePB.Sub(notify.WRITE)
-		n.readData(s)
+func (n *P2P) StartSysEventLoop(ctx context.Context) error {
+	sysEvent, err := n.Notify.SysEventHub.Sub(notify.SYS)
+	if err != nil {
+		return errors.New("Cant not subscribe queue")
+	}
+	go func() {
 		for {
 			select {
-			case msg := <-msgChan:
-				s.Write(msg.([]byte))
+			case event := <-sysEvent:
+				n.eventDestribute(event)
 			case <-ctx.Done():
 				return
 			}
 		}
-	}(ctx, s)
+	}()
+	return nil
+}
+
+func (n *P2P) eventDestribute(event interface{}) {
+	switch (event.(*notify.SysEvent)).SysType {
+	case notify.NetworkConnected:
+		n.Notify.SysDisconnected(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
+	case notify.NetworkDisconnected:
+		n.closeConnection(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+	case notify.NetworkOpenedStream:
+		n.Notify.SysClosedStream(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
+		n.broadcast(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+	case notify.NetworkClosedStream:
+		n.closeStream(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+	default:
+		panic("Invalid system event type")
+	}
+}
+
+func (n *P2P) broadcast(s inet.Stream) {
+	go func(s inet.Stream) {
+		defer s.Close()
+		msgChan, err := n.Notify.WritePB.Sub(notify.WRITE)
+		if err != nil {
+			return
+		}
+		n.readData(s)
+		for msg := range msgChan {
+			s.Write(msg.([]byte))
+		}
+	}(s)
 }
 
 func (n *P2P) closeStream(s inet.Stream) {
