@@ -7,19 +7,19 @@ import (
 	"sync"
 	"time"
 
-	"cherrychain/common/clogging"
 	"cherrychain/p2p"
 	"cherrychain/p2p/notify"
 
 	cid "github.com/ipfs/go-cid"
 	ipfsaddr "github.com/ipfs/go-ipfs-addr"
+	logging "github.com/ipfs/go-log"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	multihash "github.com/multiformats/go-multihash"
 )
 
-var bootstrapLogger = clogging.MustGetLogger("BOOTSTRAP")
+var log = logging.Logger("BOOTSTRAP")
 
 type Config struct {
 	BootstrapPeers []string
@@ -37,7 +37,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 	ctx := context.Background()
 	dht, err := dht.New(ctx, p2pModule.Host)
 	if err != nil {
-		bootstrapLogger.Fatal("Cant't create DHT")
+		log.Fatal("Cant't create DHT")
 	}
 
 	// They will tell us about the other nodes in the network.
@@ -48,14 +48,14 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 			defer wg.Done()
 			iaddr, err := ipfsaddr.ParseString(addr)
 			if err != nil {
-				bootstrapLogger.Info("Invalid ipfs address")
+				log.Info("Invalid ipfs address")
 			}
 			peerinfo, _ := peerstore.InfoFromP2pAddr(iaddr.Multiaddr())
 			p2pModule.Host.Peerstore().AddAddrs(peerinfo.ID, peerinfo.Addrs, peerstore.PermanentAddrTTL)
 			if err := p2pModule.Host.Connect(ctx, *peerinfo); err != nil {
-				bootstrapLogger.Error(err)
+				log.Error(err)
 			} else {
-				bootstrapLogger.Info("Connection established with bootstrap node: ", *peerinfo)
+				log.Info("Connection established with bootstrap node: ", *peerinfo)
 			}
 		}(addr)
 	}
@@ -65,23 +65,23 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 	// This is like telling your friends to meet you at the Eiffel Tower.
 	rendezvousPoint, _ := cid.NewPrefixV1(cid.Raw, multihash.SHA2_256).Sum([]byte(c.NetworkID))
 
-	bootstrapLogger.Info("announcing ourselves...")
+	log.Info("announcing ourselves...")
 	tctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	if err := dht.Provide(tctx, rendezvousPoint, true); err != nil {
-		bootstrapLogger.Error("Providers err: ", err)
+		log.Error("Providers err: ", err)
 	}
-	bootstrapLogger.Info("searching for other peers...")
+	log.Info("searching for other peers...")
 	tctx, cancel = context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	peers, err := dht.FindProviders(tctx, rendezvousPoint)
 	if err != nil {
-		bootstrapLogger.Error("FindProviders err: ", err)
+		log.Error("FindProviders err: ", err)
 	}
-	bootstrapLogger.Info("Found", len(peers), "peers!\n")
+	log.Info("Found", len(peers), "peers!\n")
 
 	for _, p := range peers {
-		bootstrapLogger.Info("Peer: ", p)
+		log.Info("Peer: ", p)
 	}
 
 	for _, p := range peers {
@@ -90,9 +90,9 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 		}
 		s, err := p2pModule.Host.NewStream(ctx, p.ID, c.ProtocolID)
 		if err != nil {
-			bootstrapLogger.Error("Can't connect", err)
+			log.Error("Can't connect", err)
 		} else {
-			bootstrapLogger.Info("Connected to: ", p)
+			log.Info("Connected to: ", p)
 			c.Notify.SysConnected(p2pModule.Host.Network(), s)
 			c.Notify.Notifee.Connected(p2pModule.Host.Network(), s.Conn())
 			p2pModule.HandleStream(s)

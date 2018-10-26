@@ -2,7 +2,11 @@ package config
 
 import (
 	"cherrychain/common/clogging"
-	"cherrychain/p2p/util"
+	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/spf13/viper"
@@ -21,7 +25,7 @@ type CherryConfig struct {
 func Load(fileName string) (*CherryConfig, error) {
 	conf := viper.New()
 	conf.SetConfigName(fileName)
-	currentPath, err := util.GetCurrentPath()
+	currentPath, err := GetCurrentPath()
 
 	if err != nil {
 		confLogger.Fatal("Cant't get config file: ", err)
@@ -51,4 +55,23 @@ func Load(fileName string) (*CherryConfig, error) {
 		NetworkID:      networkID,
 		ProtocolID:     protocol.ID(protocolID),
 	}, nil
+}
+
+func GetCurrentPath() (string, error) {
+	file, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.Abs(file)
+	if err != nil {
+		return "", err
+	}
+	i := strings.LastIndex(path, "/")
+	if i < 0 {
+		i = strings.LastIndex(path, "\\")
+	}
+	if i < 0 {
+		return "", errors.New(`error: Can't find "/" or "\".`)
+	}
+	return string(path[0 : i+1]), nil
 }

@@ -5,9 +5,9 @@ import (
 	"crypto/rand"
 	"sync"
 
-	"cherrychain/common/clogging"
 	"cherrychain/p2p/notify"
 
+	logging "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-host"
@@ -15,7 +15,7 @@ import (
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
-var p2pLogger = clogging.MustGetLogger("P2P")
+var log = logging.Logger("P2P")
 
 var mutex = &sync.Mutex{}
 
@@ -27,25 +27,24 @@ type P2P struct {
 }
 
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
-	p2pLogger.Debug("New p2p module")
-	p2pLogger.Info("Cherrychain start .....")
+	log.Info("Cherrychain start .....")
 
 	sourceMultiAddr, err := multiaddr.NewMultiaddr(genesisMultiAddr)
 
 	if err != nil {
-		p2pLogger.Fatal("Invalid address: ", err)
+		log.Fatal("Invalid address: ", err)
 	}
 
 	host, err := genesisNode(ctx, sourceMultiAddr)
 
 	if err != nil {
-		p2pLogger.Fatal("Cant't create p2p module: ", err)
+		log.Fatal("Cant't create p2p module: ", err)
 	}
 
 	nt, err := notify.New()
 
 	if err != nil {
-		p2pLogger.Fatal("Cant't create p2p notify module: ", err)
+		log.Fatal("Cant't create p2p notify module: ", err)
 	}
 
 	// Bind system event buf
@@ -64,7 +63,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 
 	if err != nil {
-		p2pLogger.Error("Cant't generate node private key")
+		log.Error("Cant't generate node private key")
 	}
 
 	host, _ := libp2p.New(
@@ -76,7 +75,7 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 }
 
 func (n *P2P) HandleStream(s inet.Stream) {
-	p2pLogger.Info("Open new stream")
+	log.Info("Open new stream")
 	n.Notify.SysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 }
@@ -110,7 +109,6 @@ func (n *P2P) broadcast(ctx context.Context, s inet.Stream) {
 		for {
 			select {
 			case msg := <-msgChan:
-				p2pLogger.Debug("p2p network broadcast message", msg.([]byte))
 				s.Write(msg.([]byte))
 			case <-ctx.Done():
 				return
@@ -133,7 +131,7 @@ func (n *P2P) readData(s inet.Stream) {
 		for {
 			rn, err := s.Read(msg)
 			if err != nil || rn == 0 {
-				p2pLogger.Debug("Read error", err)
+				log.Error("Read error", err)
 				return
 			}
 			n.Notify.ReadPB.Pub(msg, notify.READ)
@@ -141,8 +139,8 @@ func (n *P2P) readData(s inet.Stream) {
 	}()
 }
 
-func (n *P2P) Write(data []byte) {
-	n.Notify.WritePB.Pub(data, notify.WRITE)
+func (n *P2P) Write(data []byte) error {
+	return n.Notify.WritePB.Pub(data, notify.WRITE)
 }
 
 func (n *P2P) Read(cap []byte) (int, error) {

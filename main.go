@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"time"
 
 	"cherrychain/commands"
-	"cherrychain/common/clogging"
 	config "cherrychain/config"
 	"cherrychain/p2p"
 	"cherrychain/p2p/bootstrap"
-	p2pUtil "cherrychain/p2p/util"
+
+	logging "github.com/ipfs/go-log"
 )
 
 var bootstrapPeers = []string{
@@ -25,12 +26,12 @@ var bootstrapPeers = []string{
 	// "/ip4/172.16.101.215/tcp/1121/ipfs/QmaiU2vZtq9LcSfh77LJzN4vHQKEHhRt3j343P6jCDjXrJ",
 }
 
-var mainLogger = clogging.MustGetLogger("MAIN")
+var log = logging.Logger("MAIN")
 
 func main() {
 	cflag := commands.CommandInit()
 	fconf, _ := config.Load(cflag.Fconf)
-	ip, _ := p2pUtil.GetLocalIP()
+	ip, _ := GetLocalIP()
 	ctx := context.Background()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -49,7 +50,7 @@ func main() {
 	}
 
 	p2pModule.Host.SetStreamHandler(fconf.ProtocolID, p2pModule.HandleStream)
-	mainLogger.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s -f cherry\n", ip, cflag.Port, p2pModule.Host.ID().Pretty()))
+	log.Info(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s -f cherry\n", ip, cflag.Port, p2pModule.Host.ID().Pretty()))
 
 	conf := bootstrap.Config{
 		BootstrapPeers: bootstrapPeers,
@@ -82,4 +83,20 @@ func main() {
 	}()
 
 	select {}
+}
+
+func GetLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		//p2pUtilLogger.Error("Can not get interfaceAddrs")
+	}
+	for _, address := range addrs {
+		// 检查ip地址判断是否回环地址
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String(), nil
+			}
+		}
+	}
+	return "0.0.0.0", err
 }
