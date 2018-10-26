@@ -141,8 +141,8 @@ func (n *P2P) readData(s inet.Stream) {
 	}()
 }
 
-func (n *P2P) Write(data []byte) {
-	n.Notify.WritePB.Pub(data, notify.WRITE)
+func (n *P2P) Write(data []byte) error {
+	return n.Notify.WritePB.Pub(data, notify.WRITE)
 }
 
 func (n *P2P) Read(cap []byte) (int, error) {
