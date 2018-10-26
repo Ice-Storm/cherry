@@ -5,7 +5,8 @@ import (
 
 	"cherrychain/p2p/eventhub"
 
-	logging "github.com/ipfs/go-log"
+	logging "cherrychain/common/clogging"
+
 	inet "github.com/libp2p/go-libp2p-net"
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
@@ -39,7 +40,7 @@ const (
 var (
 	once sync.Once
 	eh   Notify
-	log  = logging.Logger("NOTIFY")
+	log  = logging.MustGetLogger("NOTIFY")
 )
 
 func New() (*Notify, error) {

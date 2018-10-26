@@ -10,16 +10,17 @@ import (
 	"cherrychain/p2p"
 	"cherrychain/p2p/notify"
 
+	logging "cherrychain/common/clogging"
+
 	cid "github.com/ipfs/go-cid"
 	ipfsaddr "github.com/ipfs/go-ipfs-addr"
-	logging "github.com/ipfs/go-log"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	multihash "github.com/multiformats/go-multihash"
 )
 
-var log = logging.Logger("BOOTSTRAP")
+var log = logging.MustGetLogger("BOOTSTRAP")
 
 type Config struct {
 	BootstrapPeers []string

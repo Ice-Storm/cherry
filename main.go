@@ -13,7 +13,7 @@ import (
 	"cherrychain/p2p"
 	"cherrychain/p2p/bootstrap"
 
-	logging "github.com/ipfs/go-log"
+	logging "cherrychain/common/clogging"
 )
 
 var bootstrapPeers = []string{
@@ -26,7 +26,7 @@ var bootstrapPeers = []string{
 	// "/ip4/172.16.101.215/tcp/1121/ipfs/QmaiU2vZtq9LcSfh77LJzN4vHQKEHhRt3j343P6jCDjXrJ",
 }
 
-var log = logging.Logger("MAIN")
+var log = logging.MustGetLogger("MAIN")
 
 func main() {
 	cflag := commands.CommandInit()

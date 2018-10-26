@@ -7,7 +7,8 @@ import (
 
 	"cherrychain/p2p/notify"
 
-	logging "github.com/ipfs/go-log"
+	logging "cherrychain/common/clogging"
+
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-host"
@@ -15,7 +16,7 @@ import (
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
-var log = logging.Logger("P2P")
+var log = logging.MustGetLogger("P2P")
 
 var mutex = &sync.Mutex{}
 
