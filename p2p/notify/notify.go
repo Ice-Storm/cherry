@@ -3,9 +3,9 @@ package notify
 import (
 	"sync"
 
-	"cherrychain/common/clogging"
 	"cherrychain/p2p/eventhub"
 
+	logging "github.com/ipfs/go-log"
 	inet "github.com/libp2p/go-libp2p-net"
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
@@ -37,9 +37,9 @@ const (
 )
 
 var (
-	once         sync.Once
-	eh           Notify
-	notifyLogger = clogging.MustGetLogger("NOTIFY")
+	once sync.Once
+	eh   Notify
+	log  = logging.Logger("NOTIFY")
 )
 
 func New() (*Notify, error) {
@@ -57,7 +57,7 @@ func New() (*Notify, error) {
 
 func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
 	n.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
-		notifyLogger.Info("System listen event")
+		log.Info("System listen event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkListen,
 			Meta:    ma,
@@ -67,7 +67,7 @@ func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
 
 func (n *Notify) SysConnected(network inet.Network, s inet.Stream) {
 	n.Notifee.ConnectedF = func(inet.Network, inet.Conn) {
-		notifyLogger.Info("System Connected event")
+		log.Info("System Connected event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkConnected,
 			Meta:    s,
@@ -77,7 +77,7 @@ func (n *Notify) SysConnected(network inet.Network, s inet.Stream) {
 
 func (n *Notify) SysDisconnected(network inet.Network, s inet.Stream) {
 	n.Notifee.DisconnectedF = func(inet.Network, inet.Conn) {
-		notifyLogger.Info("System Disconnected event")
+		log.Info("System Disconnected event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkDisconnected,
 			Meta:    s,
@@ -87,7 +87,7 @@ func (n *Notify) SysDisconnected(network inet.Network, s inet.Stream) {
 
 func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.OpenedStreamF = func(inet.Network, inet.Stream) {
-		notifyLogger.Info("System OpenedStream event")
+		log.Info("System OpenedStream event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkOpenedStream,
 			Meta:    s,
@@ -97,7 +97,7 @@ func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 
 func (n *Notify) SysClosedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.ClosedStreamF = func(inet.Network, inet.Stream) {
-		notifyLogger.Info("System ClosedStream event")
+		log.Info("System ClosedStream event")
 		n.SysEventHub.Pub(&SysEvent{
 			SysType: NetworkClosedStream,
 			Meta:    s,
