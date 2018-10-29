@@ -8,7 +8,7 @@ import (
 
 	"cherrychain/p2p/notify"
 
-	logging "cherrychain/common/clogging"
+	logging "cherrychain/clogging"
 
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"

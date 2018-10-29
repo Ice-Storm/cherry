@@ -13,7 +13,7 @@ import (
 	"cherrychain/p2p"
 	"cherrychain/p2p/bootstrap"
 
-	logging "cherrychain/common/clogging"
+	logging "cherrychain/clogging"
 )
 
 var bootstrapPeers = []string{

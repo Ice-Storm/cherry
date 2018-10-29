@@ -1,7 +1,7 @@
 package config
 
 import (
-	"cherrychain/common/clogging"
+	"cherrychain/clogging"
 	"errors"
 	"os"
 	"os/exec"

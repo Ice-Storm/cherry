@@ -10,7 +10,7 @@ import (
 	"cherrychain/p2p"
 	"cherrychain/p2p/notify"
 
-	logging "cherrychain/common/clogging"
+	logging "cherrychain/clogging"
 
 	cid "github.com/ipfs/go-cid"
 	ipfsaddr "github.com/ipfs/go-ipfs-addr"

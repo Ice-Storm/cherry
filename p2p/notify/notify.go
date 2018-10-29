@@ -5,7 +5,7 @@ import (
 
 	"cherrychain/p2p/eventhub"
 
-	logging "cherrychain/common/clogging"
+	logging "cherrychain/clogging"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	multiaddr "github.com/multiformats/go-multiaddr"
