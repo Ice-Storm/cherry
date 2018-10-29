@@ -24,11 +24,13 @@ var (
 
 const MessageSizeMax = 1 << 22 // 4 MB
 
+// P2P network
 type P2P struct {
 	Host   host.Host
 	Notify *notify.Notify
 }
 
+// New creater p2p network
 func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	log.Info("Cherrychain start .....")
 
@@ -50,7 +52,7 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 		log.Fatal("Cant't create p2p notify module: ", err)
 	}
 
-	// Bind system event buf
+	// Binding system event buf
 	nt.SysListen(host.Network(), sourceMultiAddr)
 
 	// Emit system listen event
@@ -77,12 +79,14 @@ func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (hos
 	return host, nil
 }
 
+// HandleStream handle new stream incoming to other peer
 func (n *P2P) HandleStream(s inet.Stream) {
 	log.Info("Open new stream")
 	n.Notify.SysOpenedStream(n.Host.Network(), s)
 	n.Notify.Notifee.OpenedStream(n.Host.Network(), s)
 }
 
+// StartSysEventLoop deal with system event. eg network connected
 func (n *P2P) StartSysEventLoop(ctx context.Context) error {
 	sysEvent, err := n.Notify.SysEventHub.Sub(notify.SYS)
 	if err != nil {
@@ -153,10 +157,12 @@ func (n *P2P) readData(s inet.Stream) {
 	}()
 }
 
+// Write is used to send message to other what is be connedted to this peer
 func (n *P2P) Write(data []byte) error {
 	return n.Notify.WritePB.Pub(data, notify.WRITE)
 }
 
+// Read is used to receive message to other what is be connedted to this peer
 func (n *P2P) Read(cap []byte) (int, error) {
 	msgChan, err := n.Notify.ReadPB.Sub(notify.READ)
 	if err != nil {
@@ -172,11 +178,13 @@ func (n *P2P) Read(cap []byte) (int, error) {
 	return 0, nil
 }
 
+// CloseStream close stream
 func (n *P2P) CloseStream(s inet.Stream) error {
 	n.Notify.Notifee.ClosedStream(n.Host.Network(), s)
 	return nil
 }
 
+// CloseConnection close connection
 func (n *P2P) CloseConnection(s inet.Stream) error {
 	n.Notify.Notifee.Disconnected(n.Host.Network(), s.Conn())
 	return nil

@@ -56,6 +56,7 @@ func New() (*Notify, error) {
 	return &eh, nil
 }
 
+// SysListen binding p2p netwrok listen  event
 func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
 	n.Notifee.ListenF = func(inet.Network, multiaddr.Multiaddr) {
 		log.Info("System listen event")
@@ -66,6 +67,7 @@ func (n *Notify) SysListen(network inet.Network, ma multiaddr.Multiaddr) {
 	}
 }
 
+// SysConnected binding p2p netwrok Connected  event
 func (n *Notify) SysConnected(network inet.Network, s inet.Stream) {
 	n.Notifee.ConnectedF = func(inet.Network, inet.Conn) {
 		log.Info("System Connected event")
@@ -76,6 +78,7 @@ func (n *Notify) SysConnected(network inet.Network, s inet.Stream) {
 	}
 }
 
+// SysDisconnected binding p2p netwrok Disconnected  event
 func (n *Notify) SysDisconnected(network inet.Network, s inet.Stream) {
 	n.Notifee.DisconnectedF = func(inet.Network, inet.Conn) {
 		log.Info("System Disconnected event")
@@ -86,6 +89,7 @@ func (n *Notify) SysDisconnected(network inet.Network, s inet.Stream) {
 	}
 }
 
+// SysOpenedStream binding p2p netwrok OpenedStream  event
 func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.OpenedStreamF = func(inet.Network, inet.Stream) {
 		log.Info("System OpenedStream event")
@@ -96,6 +100,7 @@ func (n *Notify) SysOpenedStream(network inet.Network, s inet.Stream) {
 	}
 }
 
+// SysClosedStream binding p2p netwrok closeStream event
 func (n *Notify) SysClosedStream(network inet.Network, s inet.Stream) {
 	n.Notifee.ClosedStreamF = func(inet.Network, inet.Stream) {
 		log.Info("System ClosedStream event")
