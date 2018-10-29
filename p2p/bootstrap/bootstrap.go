@@ -30,6 +30,7 @@ type Config struct {
 	Notify         *notify.Notify
 }
 
+// Bootstrap other nodes in the network.
 func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 	if c.MinPeers > len(c.BootstrapPeers) {
 		return []peerstore.PeerInfo{}, errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers)))
@@ -41,7 +42,7 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 		log.Fatal("Cant't create DHT")
 	}
 
-	// They will tell us about the other nodes in the network.
+	// parallel connect to other nodes
 	var wg sync.WaitGroup
 	for _, addr := range c.BootstrapPeers {
 		wg.Add(1)
@@ -62,17 +63,15 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 	}
 	wg.Wait()
 
-	// We use a rendezvous point "meet me here" to announce our location.
-	// This is like telling your friends to meet you at the Eiffel Tower.
+	// create netwrok hash as name by network ID
 	rendezvousPoint, _ := cid.NewPrefixV1(cid.Raw, multihash.SHA2_256).Sum([]byte(c.NetworkID))
 
-	log.Info("announcing ourselves...")
 	tctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	if err := dht.Provide(tctx, rendezvousPoint, true); err != nil {
 		log.Error("Providers err: ", err)
 	}
-	log.Info("searching for other peers...")
+	log.Info("Searching for other peers...")
 	tctx, cancel = context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	peers, err := dht.FindProviders(tctx, rendezvousPoint)

@@ -40,7 +40,7 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 		log.Fatal("Invalid address: ", err)
 	}
 
-	host, err := genesisNode(ctx, sourceMultiAddr)
+	host, err := newNode(ctx, sourceMultiAddr)
 
 	if err != nil {
 		log.Fatal("Cant't create p2p module: ", err)
@@ -64,19 +64,18 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	}
 }
 
-func genesisNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (host.Host, error) {
+func newNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (host.Host, error) {
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 
 	if err != nil {
 		log.Error("Cant't generate node private key")
 	}
 
-	host, _ := libp2p.New(
+	return libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(genesisMultiAddr),
 		libp2p.Identity(prvKey),
 	)
-	return host, nil
 }
 
 // HandleStream handle new stream incoming to other peer
