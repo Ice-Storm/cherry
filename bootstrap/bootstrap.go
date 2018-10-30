@@ -69,7 +69,8 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 	tctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	if err := dht.Provide(tctx, rendezvousPoint, true); err != nil {
-		log.Error("Providers err: ", err)
+		log.Errorf("Providers err: %s. may be a genesis node or not set bootstrap node", err)
+		return nil, err
 	}
 	log.Info("Searching for other peers...")
 	tctx, cancel = context.WithTimeout(ctx, time.Second*10)
@@ -79,10 +80,6 @@ func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
 		log.Error("FindProviders err: ", err)
 	}
 	log.Info("Found", len(peers), "peers!\n")
-
-	for _, p := range peers {
-		log.Info("Peer: ", p)
-	}
 
 	for _, p := range peers {
 		if p.ID == p2pModule.Host.ID() || len(p.Addrs) == 0 {
