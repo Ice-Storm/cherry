@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
+	"cherrychain/bootstrap"
 	"cherrychain/commands"
 	config "cherrychain/config"
 	"cherrychain/p2p"
-	"cherrychain/p2p/bootstrap"
 
 	logging "cherrychain/clogging"
 )

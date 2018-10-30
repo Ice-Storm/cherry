@@ -3,7 +3,7 @@ package notify
 import (
 	"sync"
 
-	"cherrychain/p2p/eventhub"
+	"cherrychain/eventhub"
 
 	logging "cherrychain/clogging"
 

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"sync"
 
-	"cherrychain/p2p/notify"
+	"cherrychain/notify"
 
 	logging "cherrychain/clogging"
 
