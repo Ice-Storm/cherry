@@ -1,4 +1,4 @@
-package bootstrap
+package p2p
 
 import (
 	"context"
@@ -8,9 +8,6 @@ import (
 	"time"
 
 	"cherrychain/notify"
-	"cherrychain/p2p"
-
-	logging "cherrychain/clogging"
 
 	cid "github.com/ipfs/go-cid"
 	ipfsaddr "github.com/ipfs/go-ipfs-addr"
@@ -19,8 +16,6 @@ import (
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	multihash "github.com/multiformats/go-multihash"
 )
-
-var log = logging.MustGetLogger("BOOTSTRAP")
 
 type Config struct {
 	BootstrapPeers []string
@@ -31,7 +26,7 @@ type Config struct {
 }
 
 // Bootstrap other nodes in the network.
-func Bootstrap(p2pModule *p2p.P2P, c Config) ([]peerstore.PeerInfo, error) {
+func (n *P2P) Bootstrap(p2pModule *P2P, c Config) ([]peerstore.PeerInfo, error) {
 	if c.MinPeers > len(c.BootstrapPeers) {
 		return []peerstore.PeerInfo{}, errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers)))
 	}

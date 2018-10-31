@@ -3,100 +3,87 @@ package main
 import (
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
-	"net"
 	"os"
-	"time"
 
-	"cherrychain/bootstrap"
-	"cherrychain/commands"
-	config "cherrychain/config"
 	"cherrychain/p2p"
 
 	logging "cherrychain/clogging"
+
+	protocol "github.com/libp2p/go-libp2p-protocol"
 )
 
-var bootstrapPeers = []string{
-	// "/ip4/172.16.101.215/tcp/9817/ipfs/Qmb2XUn5BaMjLGE2tDyVzpK35WJ26peqXUxdHPf1FLWkGu",
-	// "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
-	// "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",
-	// "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",
-	// "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",
-	// "/ip4/172.16.101.215/tcp/9091/ipfs/QmR8EFE7rxsetqx7bqprPfwy5THWNH8tVxSoZjL9ah1FsE",
-	// "/ip4/172.16.101.215/tcp/1121/ipfs/QmaiU2vZtq9LcSfh77LJzN4vHQKEHhRt3j343P6jCDjXrJ",
-}
+var (
+	bootstrapPeers = []string{}
+	log            = logging.MustGetLogger("MAIN")
+)
 
-var log = logging.MustGetLogger("MAIN")
+const (
+	ip         = "0.0.0.0"
+	protocolID = "/cherryCahin/1.0"
+	networkID  = "cherry-test"
+)
 
 func main() {
-	cflag := commands.CommandInit()
-	fconf, _ := config.Load(cflag.Fconf)
-	ip, _ := GetLocalIP()
-	ctx := context.Background()
+	port := flag.Int("sp", 3000, "listen port")
+	dest := flag.String("d", "", "Dest MultiAddr String")
+	flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	p2pModule := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, cflag.Port))
-	p2pModule.StartSysEventLoop(ctx)
+	p2pNetwork := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
 
-	go func() {
-		time.AfterFunc(2000*time.Second, func() {
-			fmt.Printf("cancel")
-			cancel()
-		})
-	}()
-
-	if cflag.Dest != "" {
-		bootstrapPeers = append(bootstrapPeers, cflag.Dest)
+	if err := p2pNetwork.StartSysEventLoop(ctx); err != nil {
+		cancel()
 	}
 
-	p2pModule.Host.SetStreamHandler(fconf.ProtocolID, p2pModule.HandleStream)
-	log.Info(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s -f cherry\n", ip, cflag.Port, p2pModule.Host.ID().Pretty()))
+	if *dest != "" {
+		bootstrapPeers = append(bootstrapPeers, *dest)
+	}
+	//  else {
+	// 	maddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
+	// 	info, _ := peerstore.InfoFromP2pAddr(maddr)
+	// 	p2pNetwork.Host.NewStream(context.Background(), info.ID, protocolID)
+	// }
 
-	conf := bootstrap.Config{
+	pID := protocol.ID(protocolID)
+	p2pNetwork.Host.SetStreamHandler(pID, p2pNetwork.HandleStream)
+
+	log.Notice(fmt.Sprintf("./main -d /ip4/%s/tcp/%d/ipfs/%s \n", ip, *port, p2pNetwork.Host.ID().Pretty()))
+
+	conf := p2p.Config{
 		BootstrapPeers: bootstrapPeers,
-		MinPeers:       0,
-		NetworkID:      fconf.NetworkID,
-		ProtocolID:     fconf.ProtocolID,
-		Notify:         p2pModule.Notify,
+		MinPeers:       -10,
+		NetworkID:      networkID,
+		ProtocolID:     pID,
+		Notify:         p2pNetwork.Notify,
 	}
 
-	bootstrap.Bootstrap(p2pModule, conf)
-
-	stdReader := bufio.NewReader(os.Stdin)
-	go func() {
-		for {
-			fmt.Print("> ")
-			sendData, err := stdReader.ReadString('\n')
-			if err != nil {
-				panic(err)
-			}
-			p2pModule.Write([]byte(sendData))
-		}
-	}()
-
-	go func() {
-		for {
-			cap := make([]byte, 1000)
-			n, _ := p2pModule.Read(cap)
-			fmt.Printf("\nread size %d -- string -- %s\n", n, string(cap))
-		}
-	}()
+	if _, err := p2pNetwork.Bootstrap(p2pNetwork, conf); err == nil {
+		go writeData(p2pNetwork)
+		go readData(p2pNetwork)
+	}
 
 	select {}
 }
 
-func GetLocalIP() (string, error) {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		//p2pUtilLogger.Error("Can not get interfaceAddrs")
-	}
-	for _, address := range addrs {
-		// 检查ip地址判断是否回环地址
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String(), nil
-			}
+func writeData(network *p2p.P2P) {
+	stdReader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Print("> ")
+		sendData, err := stdReader.ReadString('\n')
+		if err != nil {
+			panic(err)
 		}
+		network.Write([]byte(sendData))
 	}
-	return "0.0.0.0", err
+}
+
+func readData(network *p2p.P2P) {
+	for {
+		cap := make([]byte, 1000)
+		network.Read(cap)
+		fmt.Printf("\x1b[32m%s\x1b[0m> ", string(cap))
+	}
 }
