@@ -40,7 +40,7 @@ const (
 var (
 	once sync.Once
 	eh   Notify
-	log  = logging.MustGetLogger("NOTIFY")
+	log  = logging.New().MustGetLogger("NOTIFY")
 )
 
 func New() (*Notify, error) {
