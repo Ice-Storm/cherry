@@ -105,16 +105,17 @@ func (n *P2P) StartSysEventLoop(ctx context.Context) error {
 }
 
 func (n *P2P) eventDestribute(event interface{}) {
+	stream := ((event.(*notify.SysEvent)).Meta).(inet.Stream)
 	switch (event.(*notify.SysEvent)).SysType {
 	case notify.NetworkConnected:
-		n.Notify.SysDisconnected(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
+		n.Notify.SysDisconnected(n.Host.Network(), stream)
 	case notify.NetworkDisconnected:
-		n.closeConnection(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+		n.closeConnection(stream)
 	case notify.NetworkOpenedStream:
-		n.Notify.SysClosedStream(n.Host.Network(), ((event.(*notify.SysEvent)).Meta).(inet.Stream))
-		n.broadcast(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+		n.Notify.SysClosedStream(n.Host.Network(), stream)
+		n.broadcast(stream)
 	case notify.NetworkClosedStream:
-		n.closeStream(((event.(*notify.SysEvent)).Meta).(inet.Stream))
+		n.closeStream(stream)
 	default:
 		panic("Invalid system event type")
 	}
