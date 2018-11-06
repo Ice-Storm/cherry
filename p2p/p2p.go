@@ -13,6 +13,7 @@ import (
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/libp2p/go-libp2p-host"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	inet "github.com/libp2p/go-libp2p-net"
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
@@ -30,10 +31,10 @@ type P2P struct {
 }
 
 // New creater p2p network
-func New(ctx context.Context, genesisMultiAddr string) *P2P {
+func New(ctx context.Context, addr string, isGenesisNode bool) *P2P {
 	log.Info("Cherrychain start .....")
 
-	sourceMultiAddr, err := multiaddr.NewMultiaddr(genesisMultiAddr)
+	sourceMultiAddr, err := multiaddr.NewMultiaddr(addr)
 
 	if err != nil {
 		log.Fatal("Invalid address: ", err)
@@ -57,6 +58,13 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	// Emit system listen event
 	nt.Notifee.Listen(host.Network(), sourceMultiAddr)
 
+	if isGenesisNode {
+		if _, err := dht.New(ctx, host); err != nil {
+			log.Fatal("Can not create genesis node: ", err)
+		}
+		log.Info("Create genesis Node. ")
+	}
+
 	return &P2P{
 		Host:   host,
 		Notify: nt,
@@ -64,7 +72,7 @@ func New(ctx context.Context, genesisMultiAddr string) *P2P {
 	}
 }
 
-func newNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (host.Host, error) {
+func newNode(ctx context.Context, addr multiaddr.Multiaddr) (host.Host, error) {
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 
 	if err != nil {
@@ -73,7 +81,7 @@ func newNode(ctx context.Context, genesisMultiAddr multiaddr.Multiaddr) (host.Ho
 
 	return libp2p.New(
 		ctx,
-		libp2p.ListenAddrs(genesisMultiAddr),
+		libp2p.ListenAddrs(addr),
 		libp2p.Identity(prvKey),
 	)
 }
