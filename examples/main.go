@@ -9,20 +9,20 @@ import (
 
 	"cherrychain/p2p"
 
-	logging "cherrychain/clogging"
-
 	protocol "github.com/libp2p/go-libp2p-protocol"
 )
 
 var (
-	bootstrapPeers = []string{}
-	log            = logging.MustGetLogger("MAIN")
+	bootstrapPeers = []string{
+		//"/ip4/0.0.0.0/tcp/4001/p2p/QmdSyhb8eR9dDSR5jjnRoTDBwpBCSAjT7WueKJ9cQArYoA",
+	}
 )
 
 const (
 	ip         = "0.0.0.0"
 	protocolID = "/cherryCahin/1.0"
 	networkID  = "cherry-test"
+	isRoot     = false
 )
 
 func main() {
@@ -31,7 +31,8 @@ func main() {
 	flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	p2pNetwork := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
+	p2pNetwork := p2p.New(ctx, fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port), isRoot)
+	log := p2pNetwork.Log.MustGetLogger("MAIN")
 
 	if err := p2pNetwork.StartSysEventLoop(ctx); err != nil {
 		cancel()
@@ -40,11 +41,6 @@ func main() {
 	if *dest != "" {
 		bootstrapPeers = append(bootstrapPeers, *dest)
 	}
-	//  else {
-	// 	maddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", ip, *port))
-	// 	info, _ := peerstore.InfoFromP2pAddr(maddr)
-	// 	p2pNetwork.Host.NewStream(context.Background(), info.ID, protocolID)
-	// }
 
 	pID := protocol.ID(protocolID)
 	p2pNetwork.Host.SetStreamHandler(pID, p2pNetwork.HandleStream)
@@ -53,15 +49,17 @@ func main() {
 
 	conf := p2p.Config{
 		BootstrapPeers: bootstrapPeers,
-		MinPeers:       -10,
+		MinPeers:       0,
 		NetworkID:      networkID,
 		ProtocolID:     pID,
 		Notify:         p2pNetwork.Notify,
 	}
 
-	if _, err := p2pNetwork.Bootstrap(p2pNetwork, conf); err == nil {
-		go writeData(p2pNetwork)
-		go readData(p2pNetwork)
+	if !isRoot {
+		if _, err := p2pNetwork.Bootstrap(p2pNetwork, conf); err == nil {
+			go writeData(p2pNetwork)
+			go readData(p2pNetwork)
+		}
 	}
 
 	select {}
