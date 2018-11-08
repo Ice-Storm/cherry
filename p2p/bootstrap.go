@@ -58,11 +58,21 @@ func (n *P2P) Bootstrap(p2pModule *P2P, c Config) ([]peerstore.PeerInfo, error) 
 	}
 	wg.Wait()
 
-	// create netwrok hash as name by network ID
-	rendezvousPoint, _ := cid.NewPrefixV1(cid.Raw, multihash.SHA2_256).Sum([]byte(c.NetworkID))
+	peers, err := searchPeers(ctx, dht, c)
+	if err != nil {
+		log.Error("FindProviders err: ", err)
+	}
+	log.Info("Found", len(peers), "peers!\n")
 
+	connectPeers(ctx, p2pModule, peers, c)
+
+	return peers, nil
+}
+
+func searchPeers(ctx context.Context, dht *dht.IpfsDHT, c Config) ([]peerstore.PeerInfo, error) {
 	tctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
+	rendezvousPoint, _ := cid.NewPrefixV1(cid.Raw, multihash.SHA2_256).Sum([]byte(c.NetworkID))
 	if err := dht.Provide(tctx, rendezvousPoint, true); err != nil {
 		log.Errorf("Providers err: %s. may be a genesis node or not set bootstrap node", err)
 		return nil, err
@@ -75,7 +85,10 @@ func (n *P2P) Bootstrap(p2pModule *P2P, c Config) ([]peerstore.PeerInfo, error) 
 		log.Error("FindProviders err: ", err)
 	}
 	log.Info("Found", len(peers), "peers!\n")
+	return peers, nil
+}
 
+func connectPeers(ctx context.Context, p2pModule *P2P, peers []peerstore.PeerInfo, c Config) {
 	for _, p := range peers {
 		if p.ID == p2pModule.Host.ID() || len(p.Addrs) == 0 {
 			continue
@@ -90,6 +103,4 @@ func (n *P2P) Bootstrap(p2pModule *P2P, c Config) ([]peerstore.PeerInfo, error) 
 			p2pModule.HandleStream(s)
 		}
 	}
-
-	return peers, nil
 }
