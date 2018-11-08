@@ -19,7 +19,7 @@ import (
 )
 
 var mutex = &sync.Mutex{}
-var log = logging.New().MustGetLogger("P2P")
+var log = logging.MustGetLogger("P2P")
 
 const MessageSizeMax = 1 << 22 // 4 MB
 
@@ -27,7 +27,6 @@ const MessageSizeMax = 1 << 22 // 4 MB
 type P2P struct {
 	Host   host.Host
 	Notify *notify.Notify
-	Log    *logging.Logger
 }
 
 // New creater p2p network
@@ -68,7 +67,6 @@ func New(ctx context.Context, addr string, isGenesisNode bool) *P2P {
 	return &P2P{
 		Host:   host,
 		Notify: nt,
-		Log:    logging.New(),
 	}
 }
 

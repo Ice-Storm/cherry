@@ -21,40 +21,34 @@ var (
 	defaultOutput *os.File
 )
 
-type Logger struct{}
-
-func New() *Logger {
-	return &Logger{}
-}
-
-func (l *Logger) initLogger() {
+func initLogger() {
 	once.Do(func() {
 		modules = make(map[string]string)
-		l.InitBackend(l.SetFormat(defaultFormat), os.Stdout)
+		InitBackend(SetFormat(defaultFormat), os.Stdout)
 	})
 }
 
-func (l *Logger) GetModuleLevel(module string) string {
+func GetModuleLevel(module string) string {
 	level := logging.GetLevel(module).String()
 	return level
 }
 
-func (l *Logger) GetModuleLevelMap() map[string]string {
+func GetModuleLevelMap() map[string]string {
 	return modules
 }
 
 // MustGetLogger is used in place of `logging.MustGetLogger` to allow us to
 // store a map of all modules and submodules that have loggers in the system.
-func (l *Logger) MustGetLogger(module string) *logging.Logger {
-	l.initLogger()
+func MustGetLogger(module string) *logging.Logger {
+	initLogger()
 	m := logging.MustGetLogger(module)
 	if modules[module] == "" {
-		modules[module] = l.GetModuleLevel(module)
+		modules[module] = GetModuleLevel(module)
 	}
 	return m
 }
 
-func (l *Logger) SetFormat(formatSpec string) logging.Formatter {
+func SetFormat(formatSpec string) logging.Formatter {
 	if formatSpec == "" {
 		formatSpec = defaultFormat
 	}
@@ -63,13 +57,13 @@ func (l *Logger) SetFormat(formatSpec string) logging.Formatter {
 
 // InitBackend sets up the logging backend based on
 // the provided logging formatter and I/O writer.
-func (l *Logger) InitBackend(formatter logging.Formatter, output io.Writer) {
+func InitBackend(formatter logging.Formatter, output io.Writer) {
 	backend := logging.NewLogBackend(output, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, formatter)
 	logging.SetBackend(backendFormatter).SetLevel(defaultLevel, "")
 }
 
-func (l *Logger) SetModuleLevel(module string, level string) (string, error) {
+func SetModuleLevel(module string, level string) (string, error) {
 	logLevel, err := logging.LogLevel(level)
 	if err != nil {
 		logger.Warningf("Invalid logging level '%s' - ignored", level)
@@ -81,9 +75,9 @@ func (l *Logger) SetModuleLevel(module string, level string) (string, error) {
 }
 
 // SetLogLevel is used to set all modules log level
-func (l *Logger) SetLogLevel(level string) error {
+func SetLogLevel(level string) error {
 	for module := range modules {
-		if _, e := l.SetModuleLevel(module, level); e != nil {
+		if _, e := SetModuleLevel(module, level); e != nil {
 			return e
 		}
 	}
