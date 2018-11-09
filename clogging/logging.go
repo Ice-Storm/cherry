@@ -83,3 +83,13 @@ func SetLogLevel(level string) error {
 	}
 	return nil
 }
+
+func DefaultLevel() string {
+	return defaultLevel.String()
+}
+
+func Reset() {
+	modules = make(map[string]string)
+	defaultOutput = os.Stderr
+	InitBackend(SetFormat(defaultFormat), defaultOutput)
+}
