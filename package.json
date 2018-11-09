@@ -9,14 +9,8 @@
   "license": "",
   "name": "cherrychain",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "gxDependencies": [
-    {
-      "author": "juju",
-      "hash": "QmPnFd1hCcX17is8isYC3RyzMK29QxZUYfRiebhFKWvBgQ",
-      "name": "ratelimit",
-      "version": "1.0.1"
-    },
     {
       "hash": "QmPSQnBKM9g7BaUcZCvswUJVscQ1ipjmwxN5PXCjkp9EQ7",
       "name": "go-cid",
@@ -71,11 +65,6 @@
       "hash": "QmYVfCBUjMCt7qfEKKDmr8tsRDt5FBwBC5TCS8NyvE9GBG",
       "name": "github.com/op/go-logging",
       "version": "1.0.0"
-    },
-    {
-      "hash": "QmehXsntV4Xa3HYYWkWNcKnsYJUBkZtzrf2KXNXhU5QHod",
-      "name": "github.com/spf13/viper",
-      "version": "1.2.0"
     }]
 }
 
