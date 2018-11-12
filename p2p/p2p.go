@@ -3,7 +3,6 @@ package p2p
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"sync"
 
 	"cherrychain/notify"
@@ -89,10 +88,7 @@ func (n *P2P) HandleStream(s inet.Stream) {
 
 // StartSysEventLoop deal with system event. eg network connected
 func (n *P2P) StartSysEventLoop(ctx context.Context) error {
-	sysEvent, err := n.Notify.SysEventHub.Sub(notify.SYS)
-	if err != nil {
-		return errors.New("Cant not subscribe queue")
-	}
+	sysEvent := n.Notify.SysEventHub.Sub(notify.SYS)
 	go func() {
 		for {
 			select {
@@ -127,10 +123,7 @@ func (n *P2P) broadcast(s inet.Stream) {
 	go func(s inet.Stream) {
 		defer s.Close()
 		n.readData(s)
-		msgChan, err := n.Notify.WritePB.Sub(notify.WRITE)
-		if err != nil {
-			return
-		}
+		msgChan := n.Notify.WritePB.Sub(notify.WRITE)
 		for msg := range msgChan {
 			s.Write(msg.([]byte))
 		}
@@ -160,16 +153,14 @@ func (n *P2P) readData(s inet.Stream) {
 }
 
 // Write is used to send message to other what is be connedted to this peer
-func (n *P2P) Write(data []byte) error {
-	return n.Notify.WritePB.Pub(data, notify.WRITE)
+func (n *P2P) Write(data []byte) {
+	n.Notify.WritePB.Pub(data, notify.WRITE)
 }
 
 // Read is used to receive message to other what is be connedted to this peer
 func (n *P2P) Read(cap []byte) (int, error) {
-	msgChan, err := n.Notify.ReadPB.Sub(notify.READ)
-	if err != nil {
-		return 0, err
-	}
+	msgChan := n.Notify.ReadPB.Sub(notify.READ)
+	defer n.Notify.ReadPB.Unsub(msgChan, notify.READ)
 	for msg := range msgChan {
 		msgBytes := msg.([]byte)
 		if len(msgBytes) == 0 {

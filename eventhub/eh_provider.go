@@ -12,29 +12,25 @@ func New(capacity int) *Provider {
 }
 
 // Sub returns a channel on which messages published on any of the specified topics.
-func (e *Provider) Sub(topics ...string) (chan interface{}, error) {
-	return e.PubSub.Sub(topics...), nil
+func (e *Provider) Sub(topics ...string) chan interface{} {
+	return e.PubSub.Sub(topics...)
 }
 
 // Pub publishes the given message to all subscribers of the specified topics.
-func (e *Provider) Pub(msg interface{}, topics ...string) error {
+func (e *Provider) Pub(msg interface{}, topics ...string) {
 	e.PubSub.Pub(msg, topics...)
-	return nil
 }
 
-func (e *Provider) Unsub(ch chan interface{}, topics ...string) error {
+func (e *Provider) Unsub(ch chan interface{}, topics ...string) {
 	e.PubSub.Unsub(ch, topics...)
-	return nil
 }
 
 // Close channel
-func (e *Provider) Close(topics ...string) error {
+func (e *Provider) Close(topics ...string) {
 	e.PubSub.Close(topics...)
-	return nil
 }
 
 // Shutdown closes all channels
-func (e *Provider) Shutdown() error {
+func (e *Provider) Shutdown() {
 	e.PubSub.Shutdown()
-	return nil
 }
