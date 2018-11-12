@@ -34,19 +34,16 @@ func New(ctx context.Context, addr string, isGenesisNode bool) *P2P {
 	log.Info("Cherrychain start .....")
 
 	sourceMultiAddr, err := multiaddr.NewMultiaddr(addr)
-
 	if err != nil {
 		log.Fatal("Invalid address: ", err)
 	}
 
 	host, err := newNode(ctx, sourceMultiAddr)
-
 	if err != nil {
 		log.Fatal("Cant't create p2p module: ", err)
 	}
 
 	nt, err := notify.New()
-
 	if err != nil {
 		log.Fatal("Cant't create p2p notify module: ", err)
 	}
@@ -72,7 +69,6 @@ func New(ctx context.Context, addr string, isGenesisNode bool) *P2P {
 
 func newNode(ctx context.Context, addr multiaddr.Multiaddr) (host.Host, error) {
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
-
 	if err != nil {
 		log.Error("Cant't generate node private key")
 	}
@@ -130,11 +126,11 @@ func (n *P2P) eventDestribute(event interface{}) {
 func (n *P2P) broadcast(s inet.Stream) {
 	go func(s inet.Stream) {
 		defer s.Close()
+		n.readData(s)
 		msgChan, err := n.Notify.WritePB.Sub(notify.WRITE)
 		if err != nil {
 			return
 		}
-		n.readData(s)
 		for msg := range msgChan {
 			s.Write(msg.([]byte))
 		}
