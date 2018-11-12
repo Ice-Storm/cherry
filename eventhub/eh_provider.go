@@ -22,6 +22,11 @@ func (e *Provider) Pub(msg interface{}, topics ...string) error {
 	return nil
 }
 
+func (e *Provider) Unsub(ch chan interface{}, topics ...string) error {
+	e.PubSub.Unsub(ch, topics...)
+	return nil
+}
+
 // Close channel
 func (e *Provider) Close(topics ...string) error {
 	e.PubSub.Close(topics...)
