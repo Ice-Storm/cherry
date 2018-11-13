@@ -12,10 +12,11 @@ import (
 )
 
 type Notify struct {
-	Notifee     inet.NotifyBundle
-	SysEventHub *eventhub.Provider
-	WritePB     *eventhub.Provider
-	ReadPB      *eventhub.Provider
+	Notifee      inet.NotifyBundle
+	SysEventHub  *eventhub.Provider
+	UserEventHub *eventhub.Provider
+	WritePB      *eventhub.Provider
+	ReadPB       *eventhub.Provider
 }
 
 type SysEvent struct {
@@ -23,14 +24,21 @@ type SysEvent struct {
 	Meta    interface{}
 }
 
+type UserEvent struct {
+	SysType int
+	Stream  inet.Stream
+}
+
 const (
-	SysEventMaxSize = 100
-	ReadBuf         = 100
-	WriteBuf        = 100
-	SYS             = "SYSTEM"
-	WRITE           = "WRITE"
-	READ            = "READ"
-	NetworkListen   = iota
+	SysEventMaxSize  = 100
+	UserEventMaxSize = 100
+	ReadBuf          = 100
+	WriteBuf         = 100
+	SYS              = "SYSTEM"
+	USER             = "USER"
+	WRITE            = "WRITE"
+	READ             = "READ"
+	NetworkListen    = iota
 	NetworkConnected
 	NetworkDisconnected
 	NetworkOpenedStream
@@ -47,10 +55,11 @@ func New() (*Notify, error) {
 	once.Do(func() {
 		var notifee inet.NotifyBundle
 		eh = Notify{
-			Notifee:     notifee,
-			SysEventHub: eventhub.New(SysEventMaxSize),
-			WritePB:     eventhub.New(WriteBuf),
-			ReadPB:      eventhub.New(ReadBuf),
+			Notifee:      notifee,
+			SysEventHub:  eventhub.New(SysEventMaxSize),
+			UserEventHub: eventhub.New(UserEventMaxSize),
+			WritePB:      eventhub.New(WriteBuf),
+			ReadPB:       eventhub.New(ReadBuf),
 		}
 	})
 	return &eh, nil

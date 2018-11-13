@@ -93,6 +93,7 @@ func (n *P2P) StartSysEventLoop(ctx context.Context) error {
 		for {
 			select {
 			case event := <-sysEvent:
+				n.Notify.UserEventHub.Pub(event, notify.USER)
 				n.eventDestribute(event)
 			case <-ctx.Done():
 				return
@@ -180,4 +181,19 @@ func (n *P2P) CloseStream(s inet.Stream) error {
 func (n *P2P) CloseConnection(s inet.Stream) error {
 	n.Notify.Notifee.Disconnected(n.Host.Network(), s.Conn())
 	return nil
+}
+
+// ListenSysEvent output system events and customize events
+func (n *P2P) ListenSysEvent() chan *notify.UserEvent {
+	customizeEventCh := make(chan *notify.UserEvent, notify.UserEventMaxSize)
+	go func() {
+		for e := range n.Notify.UserEventHub.Sub(notify.USER) {
+			tmp := &notify.UserEvent{
+				SysType: (e.(*notify.SysEvent)).SysType,
+				Stream:  ((e.(*notify.SysEvent)).Meta).(inet.Stream),
+			}
+			customizeEventCh <- tmp
+		}
+	}()
+	return customizeEventCh
 }
