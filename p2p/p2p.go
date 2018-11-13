@@ -123,8 +123,7 @@ func (n *P2P) broadcast(s inet.Stream) {
 	go func(s inet.Stream) {
 		defer s.Close()
 		n.readData(s)
-		msgChan := n.Notify.WritePB.Sub(notify.WRITE)
-		for msg := range msgChan {
+		for msg := range n.Notify.WritePB.Sub(notify.WRITE) {
 			s.Write(msg.([]byte))
 		}
 	}(s)
