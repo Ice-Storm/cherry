@@ -29,22 +29,22 @@ type P2P struct {
 }
 
 // New creater p2p network
-func New(ctx context.Context, addr string, isGenesisNode bool) *P2P {
+func New(ctx context.Context, addr string, isGenesisNode bool) (*P2P, error) {
 	log.Info("Cherrychain start .....")
 
 	sourceMultiAddr, err := multiaddr.NewMultiaddr(addr)
 	if err != nil {
-		log.Fatal("Invalid address: ", err)
+		return nil, err
 	}
 
 	host, err := newNode(ctx, sourceMultiAddr)
 	if err != nil {
-		log.Fatal("Cant't create p2p module: ", err)
+		return nil, err
 	}
 
 	nt, err := notify.New()
 	if err != nil {
-		log.Fatal("Cant't create p2p notify module: ", err)
+		return nil, err
 	}
 
 	// Binding system event buf
@@ -63,7 +63,7 @@ func New(ctx context.Context, addr string, isGenesisNode bool) *P2P {
 	return &P2P{
 		Host:   host,
 		Notify: nt,
-	}
+	}, nil
 }
 
 func newNode(ctx context.Context, addr multiaddr.Multiaddr) (host.Host, error) {
