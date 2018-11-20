@@ -1,7 +1,6 @@
-package eventhub_test
+package eventhub
 
 import (
-	"cherrychain/eventhub"
 	"reflect"
 	"runtime"
 	"testing"
@@ -9,7 +8,7 @@ import (
 )
 
 func TestSub(t *testing.T) {
-	ps := eventhub.New(1)
+	ps := New(1)
 	ch1 := ps.Sub("t1")
 	ch2 := ps.Sub("t1")
 	ch3 := ps.Sub("t2")
@@ -24,7 +23,7 @@ func TestSub(t *testing.T) {
 	checkContents(t, ch3, []string{"hello"})
 }
 func TestUnsub(t *testing.T) {
-	ps := eventhub.New(1)
+	ps := New(1)
 	defer ps.Shutdown()
 
 	ch := ps.Sub("t1")
@@ -35,7 +34,7 @@ func TestUnsub(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	ps := eventhub.New(1)
+	ps := New(1)
 	ch1 := ps.Sub("t1")
 	ch2 := ps.Sub("t1")
 	ch3 := ps.Sub("t2")
@@ -57,7 +56,7 @@ func TestClose(t *testing.T) {
 
 func TestShutdown(t *testing.T) {
 	start := runtime.NumGoroutine()
-	eventhub.New(10).Shutdown()
+	New(10).Shutdown()
 	time.Sleep(1 * time.Millisecond)
 	if current := runtime.NumGoroutine(); current != start {
 		t.Fatalf("Goroutine leak! Expected: %d, but there were: %d.", start, current)
