@@ -1,4 +1,6 @@
-<img style=" margin-left: auto; margin-right:auto; display:block; width: 300px" src="https://github.com/Ice-Storm/cherry/blob/master/img/4.png?raw=true" />
+<p align="center">
+  <img src="https://github.com/Ice-Storm/cherry/blob/master/img/4.png?raw=true" width="320" alt="Cherry Logo" />
+</p>
 
 
 ---------
